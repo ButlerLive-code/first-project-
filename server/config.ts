@@ -30,7 +30,8 @@ export interface Config {
   devMail: boolean
   google: { clientId: string; clientSecret: string } | null
   smtp: { host: string; port: number; user?: string; password?: string; from: string } | null
-  seed: { adminPassword: string; demoPassword: string }
+  // enabled is false in production unless both passwords are set explicitly.
+  seed: { enabled: boolean; adminPassword: string; demoPassword: string }
 }
 
 // Reads process.env (or a test object) once at startup. Throws on values
@@ -57,6 +58,10 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     smtp: e.SMTP_HOST
       ? { host: e.SMTP_HOST, port: e.SMTP_PORT, user: e.SMTP_USER, password: e.SMTP_PASSWORD, from: e.SMTP_FROM }
       : null,
-    seed: { adminPassword: e.SEED_ADMIN_PASSWORD, demoPassword: e.SEED_DEMO_PASSWORD },
+    seed: {
+      enabled: !isProduction || Boolean(env.SEED_ADMIN_PASSWORD && env.SEED_DEMO_PASSWORD),
+      adminPassword: e.SEED_ADMIN_PASSWORD,
+      demoPassword: e.SEED_DEMO_PASSWORD,
+    },
   }
 }

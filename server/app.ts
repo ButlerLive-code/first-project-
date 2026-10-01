@@ -5,6 +5,7 @@ import type { Auth } from './auth.ts'
 import type { Config } from './config.ts'
 import type { Db } from './db/client.ts'
 import { AppError, errorResponse } from './errors.ts'
+import { checkOrigin } from './middleware.ts'
 import { devMailRoutes } from './routes/dev-mail.ts'
 
 export interface AppDeps {
@@ -15,6 +16,9 @@ export interface AppDeps {
 
 export function createApp({ config, db, auth }: AppDeps) {
   const app = new Hono()
+
+  // Changing requests must come from the site itself.
+  app.use('/api/*', checkOrigin(config.appUrl))
 
   app.get('/api/config', (c) => {
     const body: AppConfig = { googleEnabled: config.google !== null, devMail: config.devMail }

@@ -43,3 +43,18 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ DATABASE_URL: 'postgres://localhost/db' })).toThrow(/DATABASE_URL/)
   })
 })
+
+describe('loadConfig seed', () => {
+  it('outside production the seed uses the local default passwords', () => {
+    expect(loadConfig({}).seed).toMatchObject({ enabled: true, adminPassword: 'admin-password' })
+  })
+
+  it('in production the seed is enabled only when both passwords are set explicitly', () => {
+    const base = { NODE_ENV: 'production', BETTER_AUTH_SECRET: 'x'.repeat(32) }
+    expect(loadConfig(base).seed.enabled).toBe(false)
+    expect(loadConfig({ ...base, SEED_ADMIN_PASSWORD: 'long-enough-1' }).seed.enabled).toBe(false)
+    expect(
+      loadConfig({ ...base, SEED_ADMIN_PASSWORD: 'long-enough-1', SEED_DEMO_PASSWORD: 'long-enough-2' }).seed,
+    ).toEqual({ enabled: true, adminPassword: 'long-enough-1', demoPassword: 'long-enough-2' })
+  })
+})

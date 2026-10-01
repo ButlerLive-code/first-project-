@@ -5,6 +5,7 @@ import { createApp } from './app.ts'
 import { createAuth } from './auth.ts'
 import { loadConfig } from './config.ts'
 import { openDatabase } from './db/client.ts'
+import { seed } from './db/seed.ts'
 import { createDevMailer } from './mail/dev.ts'
 import { createSmtpMailer } from './mail/smtp.ts'
 
@@ -14,9 +15,11 @@ const { db, close } = await openDatabase(config.dataDir)
 // Without SMTP_HOST mail stays local: /dev/mail and the console.
 const mailer = config.smtp ? createSmtpMailer(config.smtp) : createDevMailer(db)
 const auth = createAuth({ config, db, mailer })
+if (!config.seed.enabled) {
+  console.log('[db] seed skipped: in production set both SEED_ADMIN_PASSWORD and SEED_DEMO_PASSWORD to create the demo accounts')
+} else if (await seed(db, auth, config.seed)) console.log('[db] seeded admin@laslesvpn.test and demo@laslesvpn.test')
 const app = createApp({ config, db, auth })
-// Loopback only: Vite proxies to it, and a direct client could spoof X-Forwarded-For.
-const server = serve({ fetch: app.fetch, port: config.port, hostname: '127.0.0.1' }, ({ port }) => {
+const server = serve({ fetch: app.fetch, port: config.port }, ({ port }) => {
   console.log(`[api] http://localhost:${port} (site: ${config.appUrl})`)
 })
 
