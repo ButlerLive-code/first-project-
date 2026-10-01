@@ -61,6 +61,15 @@ describe('password reset', () => {
     expect(await json(again)).toEqual({ error: { code: 'token_invalid' } })
   })
 
+  it('follows the language the user switched to after sign-up', async () => {
+    const cookie = await t.verifiedUser('switch@example.com', { locale: 'en' })
+    await t.call('/api/me', { method: 'PATCH', cookie, body: { locale: 'ru' } })
+    await requestReset('switch@example.com')
+    const mail = await t.lastMail('switch@example.com')
+    expect(mail.subject).toBe('Сброс пароля LaslesVPN')
+    expect(t.linkIn(mail).pathname).toBe('/ru/reset-password')
+  })
+
   it('refuses a link older than one hour', async () => {
     await t.verifiedUser('old@example.com')
     await requestReset('old@example.com')

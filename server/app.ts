@@ -7,6 +7,7 @@ import type { Db } from './db/client.ts'
 import { AppError, errorResponse } from './errors.ts'
 import { checkOrigin } from './middleware.ts'
 import { devMailRoutes } from './routes/dev-mail.ts'
+import { meRoutes } from './routes/me.ts'
 
 export interface AppDeps {
   config: Config
@@ -28,6 +29,7 @@ export function createApp({ config, db, auth }: AppDeps) {
   // Better Auth answers everything under /api/auth; its errors are reduced to { error: { code } }.
   app.on(['GET', 'POST'], '/api/auth/*', async (c) => rewriteAuthError(await auth.handler(c.req.raw)))
 
+  app.route('/api/me', meRoutes({ db, auth }))
   if (config.devMail) app.route('/api/dev/mail', devMailRoutes({ db }))
 
   app.notFound((c) => errorResponse(c, 'not_found', 404))
