@@ -27,7 +27,7 @@ export interface AuthValue {
   // True until the first session check finishes; nothing should redirect before that.
   loading: boolean
   // The path the visitor signed out or deleted the account from, until the next
-  // sign-in or sign-up. That page sends them home instead of to /signup while
+  // sign-in or sign-up. That page sends them home instead of to sign-in while
   // the emptied session catches up; other protected pages redirect as usual.
   leavingFrom: string | null
   // 'two-factor' means the password was right and /login/2fa must finish the sign-in.

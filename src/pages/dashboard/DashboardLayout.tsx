@@ -26,7 +26,7 @@ export function DashboardLayout() {
     setError(null)
     try {
       await signOut()
-      // signOut records `leavingFrom`, so RequireAuth sends us home, not to /signup,
+      // signOut records `leavingFrom`, so RequireAuth sends us home, not to sign-in,
       // if the emptied session lands before this navigation commits.
       navigate('/')
     } catch (err) {

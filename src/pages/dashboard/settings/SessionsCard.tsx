@@ -35,7 +35,7 @@ export function SessionsCard() {
     setBusy(true)
     try {
       // Ends this session too; the provider records `leavingFrom` like signOut,
-      // so a protected page goes home, not to /signup, while the store catches up.
+      // so a protected page goes home, not to sign-in, while the store catches up.
       await signOutEverywhere()
       navigate('/login', { replace: true })
     } catch (err) {
