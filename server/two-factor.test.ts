@@ -87,4 +87,26 @@ describe('two-factor sign-in', () => {
     const { res: plain } = await t.signIn('off@example.com')
     expect(await json(plain)).not.toHaveProperty('twoFactorRedirect')
   })
+
+  it('2FA is not on until the first code is confirmed', async () => {
+    const cookie = await t.verifiedUser('pending@example.com')
+    const res = await t.call('/api/auth/two-factor/enable', { method: 'POST', cookie, body: { password: PASSWORD } })
+    expect(res.status).toBe(200)
+    const me = await json<{ user: { twoFactorEnabled: boolean } }>(
+      await t.call('/api/me', { cookie: mergeCookies(cookie, res) }),
+    )
+    expect(me.user.twoFactorEnabled).toBe(false)
+    const { res: plain } = await t.signIn('pending@example.com')
+    expect(await json(plain)).not.toHaveProperty('twoFactorRedirect')
+  })
+
+  it('a challenge dies after 5 wrong codes, even for the right code', async () => {
+    const { totpURI } = await enable('limit@example.com')
+    const { cookie } = await t.signIn('limit@example.com')
+    const verify = (code: string) => t.call('/api/auth/two-factor/verify-totp', { method: 'POST', cookie, body: { code } })
+    for (let i = 0; i < 5; i++) expect(await json(await verify('000000'))).toEqual({ error: { code: 'invalid_credentials' } })
+    const late = await verify(totp(totpURI))
+    expect(late.status).not.toBe(200)
+    expect(await json(late)).toEqual({ error: { code: 'rate_limited' } })
+  })
 })

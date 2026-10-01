@@ -195,6 +195,8 @@ export const en = {
     submit: 'Verify',
     useBackup: 'Use a backup code',
     useApp: 'Use the authenticator app',
+    wrongCode: "That code didn't work. Check the code and try again.",
+    lockedOut: 'Too many wrong codes. Sign in again from the start. If it keeps failing, the account may be locked for up to 15 minutes.',
     backToLogin: 'Back to sign in',
   },
   forgot: {
@@ -446,6 +448,8 @@ export const en = {
       backupTitle: 'Two-step sign-in is on. Save your backup codes.',
       backupText:
         "Each code works once if you lose access to the app. Keep them somewhere safe: we won't show them again.",
+      wrongPassword: 'That password is wrong.',
+      wrongCode: "That code didn't work. Check the code and try again.",
       done: 'Done',
     },
     preferences: 'App preferences',

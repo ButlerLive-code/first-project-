@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react'
-import { errorMessage } from '../../../api/errorMessage'
 import { authCall } from '../../../auth/authCall'
 import { authClient } from '../../../auth/client'
 import { totpSecret } from '../../../auth/totp'
+import { passwordMessage, setupCodeMessage } from '../../../auth/twoFactorError'
 import { useAuth } from '../../../auth/useAuth'
+import type { Dictionary } from '../../../i18n/en'
 import { message, useT, type Message } from '../../../i18n/useT'
 
 // Turning on: password → QR code and key → first code → 10 backup codes.
@@ -22,13 +23,19 @@ export function TwoFactorCard() {
 
   if (!user) return null
 
-  async function run(action: () => Promise<void>) {
+  // Moving between steps drops the previous step's error.
+  function goTo(next: Step) {
+    setError(null)
+    setStep(next)
+  }
+
+  async function run(action: () => Promise<void>, describe: (t: Dictionary, err: unknown) => string) {
     setBusy(true)
     setError(null)
     try {
       await action()
     } catch (err) {
-      setError(message((t) => errorMessage(t, err)))
+      setError(message((t) => describe(t, err)))
     } finally {
       setBusy(false)
     }
@@ -41,7 +48,7 @@ export function TwoFactorCard() {
       if (action === 'disable') {
         await authCall(() => authClient.twoFactor.disable({ password, fetchOptions: { disableSignal: true } }))
         await refresh()
-        setStep({ name: 'idle' })
+        goTo({ name: 'idle' })
         return
       }
       const setup = await authCall(() => authClient.twoFactor.enable({ password }))
@@ -49,8 +56,8 @@ export function TwoFactorCard() {
       const { totpURI, backupCodes } = setup
       // Loaded on demand: only this step needs the QR encoder.
       const { toDataURL } = await import('qrcode')
-      setStep({ name: 'scan', totpURI, qr: await toDataURL(totpURI, { margin: 1, width: 192 }), backupCodes })
-    })
+      goTo({ name: 'scan', totpURI, qr: await toDataURL(totpURI, { margin: 1, width: 192 }), backupCodes })
+    }, passwordMessage)
   }
 
   function handleCode(e: FormEvent<HTMLFormElement>, backupCodes: string[]) {
@@ -61,8 +68,8 @@ export function TwoFactorCard() {
       await authCall(() => authClient.twoFactor.verifyTotp({ code, fetchOptions: { disableSignal: true } }))
       // twoFactorEnabled changed on the user; re-read it so the card is right once "Done" is pressed.
       await refresh()
-      setStep({ name: 'codes', backupCodes })
-    })
+      goTo({ name: 'codes', backupCodes })
+    }, setupCodeMessage)
   }
 
   const tf = t.settings.twoFactor
@@ -77,7 +84,7 @@ export function TwoFactorCard() {
           <button
             type="button"
             className="btn btn-outline"
-            onClick={() => setStep({ name: 'password', action: user.twoFactorEnabled ? 'disable' : 'enable' })}
+            onClick={() => goTo({ name: 'password', action: user.twoFactorEnabled ? 'disable' : 'enable' })}
           >
             {user.twoFactorEnabled ? tf.disable : tf.enable}
           </button>
@@ -95,7 +102,7 @@ export function TwoFactorCard() {
             <button type="submit" className="btn btn-primary btn-sm" disabled={busy}>
               {tf.continue}
             </button>
-            <button type="button" className="btn btn-outline btn-sm" onClick={() => setStep({ name: 'idle' })}>
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => goTo({ name: 'idle' })}>
               {tf.cancel}
             </button>
           </div>
@@ -133,7 +140,7 @@ export function TwoFactorCard() {
               </li>
             ))}
           </ul>
-          <button type="button" className="btn btn-primary btn-sm" onClick={() => setStep({ name: 'idle' })}>
+          <button type="button" className="btn btn-primary btn-sm" onClick={() => goTo({ name: 'idle' })}>
             {tf.done}
           </button>
         </>

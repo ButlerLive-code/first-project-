@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router'
-import { errorMessage } from '../api/errorMessage'
+import { toApiError } from '../api/client'
 import { safeNext } from '../auth/next'
+import { loginCodeMessage } from '../auth/twoFactorError'
 import { useAuth } from '../auth/useAuth'
 import { LocalLink } from '../i18n/LocalLink'
 import { useLocalNavigate } from '../i18n/useLocalNavigate'
@@ -9,7 +10,8 @@ import { usePageMeta } from '../i18n/usePageMeta'
 import { message, useT, type Message } from '../i18n/useT'
 
 // Second sign-in step. The password step left a short-lived two_factor cookie;
-// a valid code (or backup code) turns it into a normal session.
+// a valid code (or backup code) turns it into a normal session. `trustDevice`
+// is deliberately not offered: every sign-in asks for a code.
 export function LoginTwoFactor() {
   const t = useT()
   usePageMeta(t.twoFactorLogin.metaTitle)
@@ -30,7 +32,13 @@ export function LoginTwoFactor() {
       else await completeTwoFactor(code.replace(/\s/g, ''), 'totp')
       navigate(next, { replace: true })
     } catch (err) {
-      setError(message((t) => errorMessage(t, err)))
+      // No two_factor cookie (missing or expired): start over. /login never sends
+      // anyone back here without a fresh password step, so this cannot loop.
+      if (toApiError(err).code === 'unauthorized') {
+        navigate(`/login?next=${encodeURIComponent(next)}`, { replace: true })
+        return
+      }
+      setError(message((t) => loginCodeMessage(t, err)))
       setBusy(false)
     }
   }
