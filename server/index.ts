@@ -15,7 +15,8 @@ const { db, close } = await openDatabase(config.dataDir)
 const mailer = config.smtp ? createSmtpMailer(config.smtp) : createDevMailer(db)
 const auth = createAuth({ config, db, mailer })
 const app = createApp({ config, db, auth })
-const server = serve({ fetch: app.fetch, port: config.port }, ({ port }) => {
+// Loopback only: Vite proxies to it, and a direct client could spoof X-Forwarded-For.
+const server = serve({ fetch: app.fetch, port: config.port, hostname: '127.0.0.1' }, ({ port }) => {
   console.log(`[api] http://localhost:${port} (site: ${config.appUrl})`)
 })
 

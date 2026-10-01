@@ -91,9 +91,22 @@ export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
     hooks: {
       // Deleting an account always needs the password, not just a fresh session.
       before: createAuthMiddleware(async (ctx) => {
+        // Sign-up falls back to English for an unknown language (see the user
+        // create hook); a profile update must name a real one.
+        if (ctx.path === '/update-user') {
+          const locale = (ctx.body as { locale?: unknown } | undefined)?.locale
+          if (locale !== undefined && locale !== 'en' && locale !== 'ru') {
+            throw new APIError('BAD_REQUEST', { code: 'VALIDATION_ERROR', message: 'invalid locale' })
+          }
+        }
         if (ctx.path === '/delete-user' && !(ctx.body as { password?: unknown } | undefined)?.password) {
           throw new APIError('BAD_REQUEST', { code: 'VALIDATION_ERROR', message: 'password required' })
         }
+      }),
+      // The reset request answers the same bare body for known and unknown
+      // emails; Better Auth's English message never reaches the browser.
+      after: createAuthMiddleware(async (ctx) => {
+        if (ctx.path === '/request-password-reset') return ctx.json({ status: true })
       }),
     },
     plugins: [

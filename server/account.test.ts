@@ -21,13 +21,20 @@ async function resetPassword(token: string, newPassword: string) {
 
 describe('password reset', () => {
   it('answers the same for unknown emails and sends nothing', async () => {
+    await t.verifiedUser('known@example.com')
+    const known = await requestReset('known@example.com')
     const res = await requestReset('ghost@example.com')
     expect(res.status).toBe(200)
     expect(await t.mailCount('ghost@example.com')).toBe(0)
+    const body = await json(res)
+    expect(body).toEqual(await json(known))
+    expect(body).toEqual({ status: true })
+    expect(body).not.toHaveProperty('message')
   })
 
   it('mails a one-time link in the user language, signs out everywhere, and the token works once', async () => {
     const oldCookie = await t.verifiedUser('rita@example.com', { locale: 'ru' })
+    expect(await json(await t.call('/api/auth/get-session', { cookie: oldCookie }))).not.toBeNull()
     expect((await requestReset('rita@example.com')).status).toBe(200)
 
     const mail = await t.lastMail('rita@example.com')
@@ -36,6 +43,11 @@ describe('password reset', () => {
     expect(link.pathname).toBe('/ru/reset-password')
     expect(link.searchParams.get('email')).toBe('rita@example.com')
     const token = t.tokenIn(mail)
+    const [stored] = await t.db
+      .select()
+      .from(verification)
+      .where(eq(verification.identifier, `reset-password:${token}`))
+    expect(Math.abs(stored.expiresAt.getTime() - (Date.now() + 3600_000))).toBeLessThan(60_000)
 
     expect((await resetPassword(token, 'brand-new-pass')).status).toBe(200)
     // Every old session is gone.
@@ -110,5 +122,49 @@ describe('account deletion', () => {
     }
     expect(await t.db.select().from(user).where(eq(user.id, id))).toEqual([])
     expect(await json(await t.call('/api/auth/get-session', { cookie }))).toBeNull()
+  })
+})
+
+describe('locale on update-user', () => {
+  it('rejects anything but en and ru and stores nothing', async () => {
+    const cookie = await t.verifiedUser('loc@example.com')
+    for (const locale of ['xx', 42, null, { a: 1 }]) {
+      const res = await t.call('/api/auth/update-user', { method: 'POST', body: { locale }, cookie })
+      expect(res.status).toBe(400)
+      expect(await json(res)).toEqual({ error: { code: 'validation_failed' } })
+    }
+    const s = await json<{ user: { locale: string } }>(await t.call('/api/auth/get-session', { cookie }))
+    expect(s.user.locale).toBe('en')
+  })
+
+  it('accepts ru', async () => {
+    const cookie = await t.verifiedUser('loc2@example.com')
+    const res = await t.call('/api/auth/update-user', { method: 'POST', body: { locale: 'ru' }, cookie })
+    expect(res.status).toBe(200)
+    const s = await json<{ user: { locale: string } }>(await t.call('/api/auth/get-session', { cookie }))
+    expect(s.user.locale).toBe('ru')
+  })
+})
+
+describe('origin checks', () => {
+  it('refuses a cookie request from a foreign origin', async () => {
+    const cookie = await t.verifiedUser('origin@example.com')
+    const res = await t.call('/api/auth/update-user', {
+      method: 'POST',
+      body: { locale: 'ru' },
+      cookie,
+      origin: 'https://evil.example',
+    })
+    expect(res.status).toBe(403)
+    expect(await json(res)).toEqual({ error: { code: 'forbidden' } })
+  })
+
+  it('refuses an off-site callbackURL', async () => {
+    const res = await t.call('/api/auth/sign-up/email', {
+      method: 'POST',
+      body: { name: 'Cb', email: 'cb@example.com', password: PASSWORD, callbackURL: 'https://evil.example/x' },
+    })
+    expect(res.status).toBe(403)
+    expect(await json(res)).toEqual({ error: { code: 'forbidden' } })
   })
 })

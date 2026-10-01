@@ -24,6 +24,8 @@ describe('sign-up, confirmation and sign-in', () => {
     expect(mail.subject).toBe('Confirm your email for LaslesVPN')
     const link = t.linkIn(mail)
     expect(link.origin + link.pathname).toBe('http://localhost:5173/verify-email')
+    const payload = JSON.parse(Buffer.from(t.tokenIn(mail).split('.')[1], 'base64url').toString())
+    expect(Math.abs(payload.exp - (Date.now() / 1000 + 86400))).toBeLessThan(60)
 
     expect((await t.verifyEmail('ann@example.com')).status).toBe(200)
 
