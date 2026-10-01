@@ -17,12 +17,26 @@
   flex: 1;
   align-items: center;
   justify-content: space-between;
+  gap: 40px;
   margin-left: 157px;
+}
+
+/* Russian labels are longer: pull the menu closer to the logo so "Помощь"
+   and "Войти" never run into each other on the full-width bar. */
+@media (min-width: 1101px) {
+  html[lang='ru'] .header-menu {
+    margin-left: 72px;
+  }
 }
 
 .header-nav {
   display: flex;
   gap: 40px;
+}
+
+.header-nav a,
+.header-signin {
+  white-space: nowrap;
 }
 
 .header-nav a:hover {
