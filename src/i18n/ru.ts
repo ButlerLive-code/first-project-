@@ -161,7 +161,7 @@ export const ru: Dictionary = {
   signup: {
     metaTitle: 'Регистрация',
     title: 'Создайте аккаунт',
-    subtitle: 'Присоединяйтесь к 90+ пользователей, которые безопасно сидят в сети с LaslesVPN.',
+    subtitle: 'Присоединяйтесь к 90+ пользователям, которые безопасно работают в сети с LaslesVPN.',
     fullName: 'Полное имя',
     namePlaceholder: 'Иван Петров',
     passwordPlaceholder: 'Не менее 6 символов',
@@ -169,7 +169,7 @@ export const ru: Dictionary = {
     terms: 'Условия использования',
     agreeMiddle: ' и ',
     privacy: 'Политику конфиденциальности',
-    submit: 'Регистрация',
+    submit: 'Зарегистрироваться',
     haveAccount: 'Уже есть аккаунт? ',
     signIn: 'Войти',
   },
@@ -203,7 +203,7 @@ export const ru: Dictionary = {
     pay: (amount: string) => `Оплатить ${amount}`,
     errors: {
       cardNumber: 'Введите 16-значный номер карты.',
-      expiry: 'Введите действительный срок действия карты (ММ/ГГ).',
+      expiry: 'Введите корректный срок действия карты (ММ/ГГ).',
       cvc: 'Введите CVC из 3–4 цифр.',
     },
   },
