@@ -6,6 +6,7 @@ import type { Config } from './config.ts'
 import type { Db } from './db/client.ts'
 import { AppError, errorResponse } from './errors.ts'
 import { checkOrigin } from './middleware.ts'
+import { checkoutRoutes } from './routes/checkout.ts'
 import { devMailRoutes } from './routes/dev-mail.ts'
 import { meRoutes } from './routes/me.ts'
 
@@ -30,6 +31,7 @@ export function createApp({ config, db, auth }: AppDeps) {
   app.on(['GET', 'POST'], '/api/auth/*', async (c) => rewriteAuthError(await auth.handler(c.req.raw)))
 
   app.route('/api/me', meRoutes({ db, auth }))
+  app.route('/api/checkout', checkoutRoutes({ db, auth }))
   if (config.devMail) app.route('/api/dev/mail', devMailRoutes({ db }))
 
   app.notFound((c) => errorResponse(c, 'not_found', 404))
