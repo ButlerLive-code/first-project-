@@ -211,7 +211,7 @@ export function Checkout() {
             <span>{formatPrice(total, locale)}</span>
           </p>
           {error && <p className="form-error">{error(t)}</p>}
-          <button type="submit" className="btn btn-primary form-submit" disabled={processing || isCurrent}>
+          <button type="submit" className="btn btn-primary form-submit" disabled={processing || isCurrent || !me}>
             {processing
               ? t.checkout.processing
               : isCurrent

@@ -12,14 +12,16 @@ export function PreferencesCard() {
   const t = useT()
   const me = useMe()
   const [error, setError] = useState<Message>(null)
+  const [pending, setPending] = useState(false)
   const preferences = me.data?.preferences
 
   async function toggle(key: keyof Preferences) {
-    if (!me.data) return
+    if (!me.data || pending) return
     const before = me.data
     // Flip at once; roll back if the server says no.
     me.setData({ ...before, preferences: { ...before.preferences, [key]: !before.preferences[key] } })
     setError(null)
+    setPending(true)
     try {
       const preferences = await apiFetch<Preferences>('/api/me/preferences', {
         method: 'PATCH',
@@ -29,6 +31,8 @@ export function PreferencesCard() {
     } catch (err) {
       me.setData(before)
       setError(message((t) => errorMessage(t, err)))
+    } finally {
+      setPending(false)
     }
   }
 
@@ -45,7 +49,7 @@ export function PreferencesCard() {
                   <b>{t.settings.toggles[key].title}</b>
                   <span>{t.settings.toggles[key].text}</span>
                 </span>
-                <input type="checkbox" role="switch" checked={preferences[key]} onChange={() => toggle(key)} />
+                <input type="checkbox" role="switch" checked={preferences[key]} disabled={pending} onChange={() => toggle(key)} />
                 <span className="switch-track" aria-hidden="true" />
               </label>
             </li>
