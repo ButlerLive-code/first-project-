@@ -564,6 +564,14 @@ export const ru: Dictionary = {
     ctaButton: 'Получить LaslesVPN',
     keepReading: 'Читайте также',
   },
+  legal: {
+    eyebrow: 'Правовая информация',
+    lastUpdated: (date: string) => `Последнее обновление: ${date}`,
+    contents: 'Содержание',
+    questionsBefore: 'Есть вопросы? ',
+    contactLink: 'Свяжитесь с нашей командой',
+    questionsAfter: '.',
+  },
   notFound: {
     metaTitle: 'Страница не найдена',
     title: 'Страница не найдена',

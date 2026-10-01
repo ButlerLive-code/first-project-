@@ -557,6 +557,14 @@ export const en = {
     ctaButton: 'Get LaslesVPN',
     keepReading: 'Keep reading',
   },
+  legal: {
+    eyebrow: 'Legal',
+    lastUpdated: (date: string) => `Last updated ${date}`,
+    contents: 'Contents',
+    questionsBefore: 'Questions? ',
+    contactLink: 'Contact our team',
+    questionsAfter: '.',
+  },
   notFound: {
     metaTitle: 'Page not found',
     title: 'Page not found',

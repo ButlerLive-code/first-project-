@@ -1,6 +1,5 @@
 import { Route, Routes } from 'react-router'
 import { RequireAuth } from './auth/RequireAuth'
-import { privacy, terms } from './data/legal'
 import { LocaleProvider } from './i18n/LocaleProvider'
 import { Layout } from './layout/Layout'
 import { About } from './pages/About'
@@ -76,8 +75,8 @@ function siteRoutes() {
       <Route path="help" element={<Help />} />
       <Route path="affiliate" element={<Affiliate />} />
       <Route path="partners" element={<Partners />} />
-      <Route path="privacy" element={<Legal key="privacy" doc={privacy} />} />
-      <Route path="terms" element={<Legal key="terms" doc={terms} />} />
+      <Route path="privacy" element={<Legal key="privacy" doc="privacy" />} />
+      <Route path="terms" element={<Legal key="terms" doc="terms" />} />
       <Route path="*" element={<NotFound />} />
     </>
   )
