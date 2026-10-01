@@ -11,6 +11,28 @@ const PROPS = new Set(['label', 'title', 'text', 'description', 'placeholder', '
 
 const isStringLike = (n) => n && (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n))
 
+// Walk up from a literal through conditional branches, ||/&&/?? operands and
+// parentheses to a JsxExpression that is a JSX child or a user-facing attribute.
+const LOGICAL = new Set([ts.SyntaxKind.BarBarToken, ts.SyntaxKind.AmpersandAmpersandToken, ts.SyntaxKind.QuestionQuestionToken])
+function isUiExpression(node) {
+  let cur = node
+  for (;;) {
+    const p = cur.parent
+    if (!p) return false
+    if (ts.isParenthesizedExpression(p)) cur = p
+    else if (ts.isConditionalExpression(p) && p.condition !== cur) cur = p
+    else if (ts.isBinaryExpression(p) && LOGICAL.has(p.operatorToken.kind)) cur = p
+    else if (ts.isJsxExpression(p)) {
+      const g = p.parent
+      return (
+        ts.isJsxElement(g) ||
+        ts.isJsxFragment(g) ||
+        (ts.isJsxAttribute(g) && ATTRS.has(g.name.getText()))
+      )
+    } else return false
+  }
+}
+
 export function scanSource(code) {
   const sf = ts.createSourceFile('x.tsx', code, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
   const lines = code.split('\n')
@@ -27,22 +49,19 @@ export function scanSource(code) {
   const visit = (node) => {
     if (ts.isJsxText(node)) {
       report(node, node.text)
-    } else if (isStringLike(node)) {
+    } else if (isStringLike(node) || ts.isTemplateExpression(node)) {
       const parent = node.parent
-      if (ts.isJsxAttribute(parent) && ATTRS.has(parent.name.getText(sf))) {
-        report(node, node.text)
+      if (ts.isJsxAttribute(parent)) {
+        if (ATTRS.has(parent.name.getText(sf)) && isStringLike(node)) report(node, node.text)
+      } else if (isUiExpression(node)) {
+        if (ts.isTemplateExpression(node)) {
+          report(node.head, node.head.text)
+          for (const span of node.templateSpans) report(span.literal, span.literal.text)
+        } else {
+          report(node, node.text)
+        }
       } else if (
-        ts.isJsxExpression(parent) &&
-        ts.isJsxAttribute(parent.parent) &&
-        ATTRS.has(parent.parent.name.getText(sf))
-      ) {
-        report(node, node.text)
-      } else if (
-        ts.isJsxExpression(parent) &&
-        (ts.isJsxElement(parent.parent) || ts.isJsxFragment(parent.parent))
-      ) {
-        report(node, node.text)
-      } else if (
+        isStringLike(node) &&
         ts.isPropertyAssignment(parent) &&
         parent.initializer === node &&
         (ts.isIdentifier(parent.name) || ts.isStringLiteral(parent.name)) &&

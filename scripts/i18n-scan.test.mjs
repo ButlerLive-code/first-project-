@@ -69,3 +69,20 @@ it('reports string literals in JSX expressions', () => {
 it('honours i18n-ignore in JSX comments on the same line', () => {
   expect(texts('<p>Hello</p> {/* i18n-ignore */}')).toEqual([])
 })
+
+it('reports strings in conditional and logical JSX expressions', () => {
+  expect(texts("<p>{isFree ? 'Free forever' : 'Billed monthly'}</p>")).toEqual(['Free forever', 'Billed monthly'])
+  expect(texts("<p>{error || 'Something went wrong'}</p>")).toEqual(['Something went wrong'])
+  expect(texts("<p>{ok && 'Done'}</p>")).toEqual(['Done'])
+  expect(texts("<p>{x ?? 'Fallback text'}</p>")).toEqual(['Fallback text'])
+  expect(texts("<p>{(s.premium ? 'Premium' : 'Free')}</p>")).toEqual(['Premium', 'Free'])
+  expect(texts("<a title={x ? 'A b' : 'C d'} />")).toEqual(['A b', 'C d'])
+})
+
+it('does not report condition operands', () => {
+  expect(texts("<p>{plan === 'standard' ? <b>Popular</b> : null}</p>")).toEqual(['Popular'])
+})
+
+it('reports static parts of template expressions', () => {
+  expect(texts('<p>{`Hello ${name}, welcome`}</p>')).toEqual(['Hello', ', welcome'])
+})
