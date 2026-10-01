@@ -20,6 +20,9 @@ export interface AuthDeps {
   mailer: Mailer
   // Off in tests unless a test is about rate limiting.
   rateLimit?: boolean
+  // Tests only: lets a positive-control test show that refusing Google
+  // ID-token sign-in is really down to disableIdTokenSignIn.
+  googleIdTokenSignIn?: boolean
 }
 
 function userLocale(user: object): UserLocale {
@@ -28,7 +31,7 @@ function userLocale(user: object): UserLocale {
 
 const THIRTY_DAYS = 60 * 60 * 24 * 30
 
-export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
+export function createAuth({ config, db, mailer, rateLimit = true, googleIdTokenSignIn = false }: AuthDeps) {
   // The session that asked for an email change, by request: the before hook
   // reads it, the change mail stores it with the link.
   const changeRequester = new WeakMap<Request, string>()
@@ -105,7 +108,7 @@ export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
             // The ID-token flow returns a session straight from sign-in/social,
             // where neither the 2FA hook nor the plugin's applies. The site only
             // uses the redirect flow.
-            disableIdTokenSignIn: true,
+            disableIdTokenSignIn: !googleIdTokenSignIn,
           },
         }
       : {},
@@ -131,7 +134,12 @@ export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
       user: {
         create: {
           // Sign-up may only pick a language; anything else falls back to English.
-          before: async (user) => ({ data: { ...user, locale: userLocale(user) } }),
+          // The name goes into mail greetings: one line, at most 80 characters.
+          before: async (user) => ({ data: { ...user, name: cleanName(user.name), locale: userLocale(user) } }),
+        },
+        update: {
+          // Same for /update-user (PATCH /api/me cleans it in its own schema).
+          before: async (user) => ({ data: typeof user.name === 'string' ? { ...user, name: cleanName(user.name) } : user }),
         },
       },
     },
@@ -287,6 +295,14 @@ function changeEmailPayload(token: unknown) {
   } catch {
     return null
   }
+}
+
+// A person's name as stored: control characters (CR/LF above all, which could
+// break a mail header or forge lines in a mail body) become spaces, and it is
+// cut to 80 characters like PATCH /api/me allows.
+export function cleanName(name: string) {
+  // eslint-disable-next-line no-control-regex -- control characters are the point
+  return name.replace(/[\u0000-\u001F\u007F]+/g, ' ').trim().slice(0, 80).trim()
 }
 
 // What the change-email row remembers: the account and the session that asked.

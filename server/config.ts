@@ -57,13 +57,18 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   if (e.DATABASE_URL) {
     throw new Error('DATABASE_URL (external Postgres) is not wired up yet; unset it to use the local PGlite database')
   }
+  // Dev mail publishes reset and confirmation links at /api/dev/mail. It fails
+  // closed: a deploy that forgets NODE_ENV=production but has a real APP_URL
+  // does not get it.
+  const appHost = new URL(e.APP_URL).hostname
+  const localApp = appHost === 'localhost' || appHost === '127.0.0.1'
   return {
     isProduction,
     port: e.API_PORT,
     appUrl: new URL(e.APP_URL).origin,
     secret: e.BETTER_AUTH_SECRET ?? DEV_SECRET,
     dataDir: e.DATA_DIR,
-    devMail: !isProduction,
+    devMail: !isProduction && localApp,
     google:
       e.GOOGLE_CLIENT_ID && e.GOOGLE_CLIENT_SECRET
         ? { clientId: e.GOOGLE_CLIENT_ID, clientSecret: e.GOOGLE_CLIENT_SECRET }

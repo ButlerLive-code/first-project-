@@ -18,8 +18,11 @@ const byAuthCode: Record<string, ErrorCode> = {
   PASSWORD_TOO_LONG: 'weak_password',
   USER_ALREADY_EXISTS: 'email_taken',
   USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: 'email_taken',
-  TOO_MANY_ATTEMPTS_REQUEST_NEW_CODE: 'rate_limited',
-  ACCOUNT_TEMPORARILY_LOCKED: 'rate_limited',
+  // The 2FA challenge is dead after 5 wrong codes: the page must start over.
+  TOO_MANY_ATTEMPTS_REQUEST_NEW_CODE: 'unauthorized',
+  // The account-wide 2FA lockout (up to 15 minutes), told apart from a short
+  // rate limit, which stays rate_limited.
+  ACCOUNT_TEMPORARILY_LOCKED: 'forbidden',
   INVALID_TWO_FACTOR_COOKIE: 'unauthorized',
   SESSION_EXPIRED: 'unauthorized',
   VALIDATION_ERROR: 'validation_failed',

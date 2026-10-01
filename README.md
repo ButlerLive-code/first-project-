@@ -36,7 +36,9 @@ skipped unless both passwords are set explicitly, and the example passwords are 
 
 If `SMTP_*` is set (in any environment), real mail is sent. Otherwise mail is not sent: it is
 stored in the database, printed in the API console and, in development, shown at
-[/dev/mail](http://localhost:5173/dev/mail) (Russian: `/ru/dev/mail`).
+[/dev/mail](http://localhost:5173/dev/mail) (Russian: `/ru/dev/mail`). `/dev/mail` is on only when
+`NODE_ENV` is not `production` and `APP_URL` points at `localhost` or `127.0.0.1`, so a deploy that
+forgets `NODE_ENV=production` still does not publish reset links.
 
 Google sign-in appears only when both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set. In
 Google Cloud, add this authorized redirect URI: `{APP_URL}/api/auth/callback/google`

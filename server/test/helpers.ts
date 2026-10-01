@@ -38,12 +38,20 @@ export function mergeCookies(previous: string, res: Response): string {
   return [...jar.values()].join('; ')
 }
 
-export async function createTestApp(options: { rateLimit?: boolean; env?: Record<string, string> } = {}) {
+export async function createTestApp(
+  options: { rateLimit?: boolean; env?: Record<string, string>; googleIdTokenSignIn?: boolean } = {},
+) {
   const config = loadConfig({ NODE_ENV: 'test', APP_URL, ...options.env })
   const database = await openDatabase()
   const { db } = database
   const mailer = createDevMailer(db, () => {})
-  const auth = createAuth({ config, db, mailer, rateLimit: options.rateLimit ?? false })
+  const auth = createAuth({
+    config,
+    db,
+    mailer,
+    rateLimit: options.rateLimit ?? false,
+    googleIdTokenSignIn: options.googleIdTokenSignIn,
+  })
   const app = createApp({ config, db, auth })
 
   // Like a browser on the site: JSON body, Origin of the site, optional cookie.

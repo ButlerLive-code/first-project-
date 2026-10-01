@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { errorMessage } from '../../../api/errorMessage'
+import { deleteAccountMessage } from '../../../auth/deleteError'
 import { useAuth } from '../../../auth/useAuth'
 import { useHasPassword } from '../../../auth/useHasPassword'
 import { useLocalNavigate } from '../../../i18n/useLocalNavigate'
@@ -27,7 +27,7 @@ export function DeleteAccountCard() {
       // rather than to sign-in while the session store catches up.
       navigate('/', { replace: true })
     } catch (err) {
-      setError(message((t) => errorMessage(t, err)))
+      setError(message((t) => deleteAccountMessage(t, err, needsPassword)))
       setBusy(false)
     }
   }

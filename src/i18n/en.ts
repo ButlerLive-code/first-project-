@@ -202,7 +202,8 @@ export const en = {
     useBackup: 'Use a backup code',
     useApp: 'Use the authenticator app',
     wrongCode: "That code didn't work. Check the code and try again.",
-    lockedOut: 'Too many wrong codes. Sign in again from the start. If it keeps failing, the account may be locked for up to 15 minutes.',
+    tooFast: 'Too many attempts. Wait a few seconds and try again.',
+    lockedOut: 'Too many wrong codes. Two-step sign-in for this account is locked for up to 15 minutes. Try again later.',
     backToLogin: 'Back to sign in',
   },
   forgot: {
@@ -501,6 +502,7 @@ export const en = {
     deleteText:
       "This permanently removes your profile, devices, subscription and payment history and signs you out everywhere. It can't be undone.",
     deletePassword: 'Your password',
+    deleteReauthGoogle: 'To delete the account, sign out and sign in with Google again.',
     typeBefore: 'Type ',
     deleteWord: 'DELETE',
     typeAfter: ' to confirm',

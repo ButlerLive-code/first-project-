@@ -107,6 +107,21 @@ describe('two-factor sign-in', () => {
     for (let i = 0; i < 5; i++) expect(await json(await verify('000000'))).toEqual({ error: { code: 'invalid_credentials' } })
     const late = await verify(totp(totpURI))
     expect(late.status).not.toBe(200)
-    expect(await json(late)).toEqual({ error: { code: 'rate_limited' } })
+    // unauthorized sends /login/2fa back to the password step.
+    expect(await json(late)).toEqual({ error: { code: 'unauthorized' } })
+  })
+
+  it('after 10 wrong codes the account is locked, which the page tells apart from a short wait', async () => {
+    const { totpURI } = await enable('lockout@example.com')
+    for (let round = 0; round < 2; round++) {
+      const { cookie } = await t.signIn('lockout@example.com')
+      for (let i = 0; i < 5; i++) {
+        await t.call('/api/auth/two-factor/verify-totp', { method: 'POST', cookie, body: { code: '000000' } })
+      }
+    }
+    const { cookie } = await t.signIn('lockout@example.com')
+    const locked = await t.call('/api/auth/two-factor/verify-totp', { method: 'POST', cookie, body: { code: totp(totpURI) } })
+    expect(locked.status).toBe(429)
+    expect(await json(locked)).toEqual({ error: { code: 'forbidden' } })
   })
 })

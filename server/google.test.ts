@@ -1,5 +1,5 @@
+import { generateKeyPairSync, sign } from 'node:crypto'
 import { eq } from 'drizzle-orm'
-import { exportJWK, generateKeyPair, SignJWT } from 'jose'
 import { afterAll, beforeAll, expect, it, vi } from 'vitest'
 import { account, session, user } from './db/schema.ts'
 import { APP_URL, createTestApp, json, mergeCookies, PASSWORD, totp, type TestApp } from './test/helpers.ts'
@@ -209,17 +209,28 @@ it('refuses a foreign error page too', async () => {
   expect(await json(res)).toEqual({ error: { code: 'forbidden' } })
 })
 
-it('refuses Google ID-token sign-in even with a valid token, which would skip the second step', async () => {
-  const { publicKey, privateKey } = await generateKeyPair('RS256')
-  const jwk = { ...(await exportJWK(publicKey)), kid: 'k1', alg: 'RS256', use: 'sig' }
-  const token = await new SignJWT({ email: 'idtoken@example.com', email_verified: true, name: 'Id Token' })
-    .setProtectedHeader({ alg: 'RS256', kid: 'k1' })
-    .setIssuer('https://accounts.google.com')
-    .setAudience('id.apps.googleusercontent.com')
-    .setSubject('g-idtoken')
-    .setIssuedAt()
-    .setExpirationTime('1h')
-    .sign(privateKey)
+// A Google ID token signed with a local RSA key, and Google's key endpoint
+// answered with the matching public key. Built with node:crypto only.
+function googleIdToken(email: string) {
+  const { publicKey, privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })
+  const jwk = { ...publicKey.export({ format: 'jwk' }), kid: 'k1', alg: 'RS256', use: 'sig' }
+  const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString('base64url')
+  const now = Math.floor(Date.now() / 1000)
+  const signingInput = `${b64({ alg: 'RS256', kid: 'k1', typ: 'JWT' })}.${b64({
+    iss: 'https://accounts.google.com',
+    aud: 'id.apps.googleusercontent.com',
+    sub: `g-${email}`,
+    email,
+    email_verified: true,
+    name: 'Id Token',
+    iat: now,
+    exp: now + 3600,
+  })}`
+  const token = `${signingInput}.${sign('RSA-SHA256', Buffer.from(signingInput), privateKey).toString('base64url')}`
+  return { token, jwk }
+}
+
+async function withGoogleKeys<T>(jwk: object, run: () => Promise<T>) {
   const stubbed = globalThis.fetch
   vi.stubGlobal('fetch', async (input: string | URL | Request, init?: RequestInit) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
@@ -229,6 +240,15 @@ it('refuses Google ID-token sign-in even with a valid token, which would skip th
     return stubbed(input, init)
   })
   try {
+    return await run()
+  } finally {
+    vi.stubGlobal('fetch', stubbed)
+  }
+}
+
+it('refuses Google ID-token sign-in even with a valid token, which would skip the second step', async () => {
+  const { token, jwk } = googleIdToken('idtoken@example.com')
+  await withGoogleKeys(jwk, async () => {
     const sessionsBefore = (await on.db.select().from(session)).length
     const res = await on.call('/api/auth/sign-in/social', {
       method: 'POST',
@@ -238,7 +258,25 @@ it('refuses Google ID-token sign-in even with a valid token, which would skip th
     expect(Object.keys(await json(res))).toEqual(['error'])
     expect(res.headers.getSetCookie()).toEqual([])
     expect((await on.db.select().from(session)).length).toBe(sessionsBefore)
+  })
+})
+
+it('positive control: the same kind of token signs in when ID-token sign-in is not disabled', async () => {
+  const allowing = await createTestApp({
+    env: { GOOGLE_CLIENT_ID: 'id.apps.googleusercontent.com', GOOGLE_CLIENT_SECRET: 'secret' },
+    googleIdTokenSignIn: true,
+  })
+  try {
+    const { token, jwk } = googleIdToken('idtoken-ok@example.com')
+    await withGoogleKeys(jwk, async () => {
+      const res = await allowing.call('/api/auth/sign-in/social', {
+        method: 'POST',
+        body: { provider: 'google', idToken: { token } },
+      })
+      expect(res.status).toBe(200)
+      expect((await allowing.call('/api/me', { cookie: mergeCookies('', res) })).status).toBe(200)
+    })
   } finally {
-    vi.stubGlobal('fetch', stubbed)
+    await allowing.close()
   }
 })

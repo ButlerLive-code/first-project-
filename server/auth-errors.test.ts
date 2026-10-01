@@ -13,6 +13,10 @@ describe('toErrorCode', () => {
     [422, 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL', 'email_taken'],
     [400, 'VALIDATION_ERROR', 'validation_failed'],
     [429, undefined, 'rate_limited'],
+    // The challenge is dead after 5 wrong codes: the page must start over.
+    [400, 'TOO_MANY_ATTEMPTS_REQUEST_NEW_CODE', 'unauthorized'],
+    // The account-wide 2FA lockout (up to 15 minutes) is not a few-seconds wait.
+    [429, 'ACCOUNT_TEMPORARILY_LOCKED', 'forbidden'],
     [401, 'SOMETHING_NEW', 'unauthorized'],
     [403, undefined, 'forbidden'],
     [404, undefined, 'not_found'],

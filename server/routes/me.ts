@@ -4,7 +4,7 @@ import { Hono } from 'hono'
 import * as z from 'zod'
 import { locales, platformIds, type Me, type SessionInfo } from '../../shared/api.ts'
 import { deviceLimit } from '../../shared/plans.ts'
-import type { Auth } from '../auth.ts'
+import { cleanName, type Auth } from '../auth.ts'
 import type { Db } from '../db/client.ts'
 import { device, payment, preferences, session, subscription, user } from '../db/schema.ts'
 import { AppError, readBody } from '../errors.ts'
@@ -13,7 +13,8 @@ import { defaultPreferences, toDevice, toPayment, toPreferences, toProfile, toSu
 
 const profilePatch = z
   .object({
-    name: z.string().trim().min(1).max(80).optional(),
+    // Over 80 characters is refused as before; line breaks become spaces (cleanName).
+    name: z.string().trim().max(80).transform(cleanName).pipe(z.string().min(1)).optional(),
     locale: z.enum(locales).optional(),
   })
   .refine((v) => v.name !== undefined || v.locale !== undefined)

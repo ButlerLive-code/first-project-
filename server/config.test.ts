@@ -82,3 +82,14 @@ describe('loadConfig production refuses public values', () => {
     expect(loadConfig({ SEED_ADMIN_PASSWORD: 'admin-password', SEED_DEMO_PASSWORD: 'demo-password' }).seed.enabled).toBe(true)
   })
 })
+
+describe('loadConfig dev mail', () => {
+  it('is on only for a local APP_URL outside production', () => {
+    expect(loadConfig({}).devMail).toBe(true)
+    expect(loadConfig({ APP_URL: 'http://127.0.0.1:5180' }).devMail).toBe(true)
+    // A deploy that forgot NODE_ENV=production must not publish reset links.
+    expect(loadConfig({ APP_URL: 'https://vpn.example.com' }).devMail).toBe(false)
+    expect(loadConfig({ APP_URL: 'http://localhost.example.com' }).devMail).toBe(false)
+    expect(loadConfig({ NODE_ENV: 'production', BETTER_AUTH_SECRET: 'x'.repeat(32) }).devMail).toBe(false)
+  })
+})

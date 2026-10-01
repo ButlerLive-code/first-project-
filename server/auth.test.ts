@@ -155,3 +155,40 @@ describe('session cookie', () => {
     }
   })
 })
+
+describe('the account name', () => {
+  const injected = `Mallory\r\nBcc: all@example.com\nSubject: hi ${'x'.repeat(120)}`
+
+  it('drops line breaks and keeps at most 80 characters at sign-up', async () => {
+    const cookie = await t.signUp('mallory@example.com', { name: injected })
+    const { user } = await json<{ user: { name: string } }>(await t.call('/api/me', { cookie }))
+    expect(user.name).not.toMatch(/[\r\n]/)
+    expect(user.name.length).toBeLessThanOrEqual(80)
+    expect(user.name.startsWith('Mallory Bcc: all@example.com Subject: hi')).toBe(true)
+    const mail = await t.lastMail('mallory@example.com')
+    expect(mail.text.split('\n').some((line) => line.startsWith('Bcc:'))).toBe(false)
+  })
+
+  it('gets the same treatment when changed later', async () => {
+    const cookie = await t.verifiedUser('mallory2@example.com')
+    const patched = await t.call('/api/me', { method: 'PATCH', cookie, body: { name: 'Eve\r\nBcc: x@example.com' } })
+    expect(patched.status).toBe(200)
+    expect((await json<{ user: { name: string } }>(patched)).user.name).toBe('Eve Bcc: x@example.com')
+    const viaAuth = await t.call('/api/auth/update-user', { method: 'POST', cookie, body: { name: `Zed\n${'y'.repeat(100)}` } })
+    expect(viaAuth.status).toBe(200)
+    const { user } = await json<{ user: { name: string } }>(await t.call('/api/me', { cookie }))
+    expect(user.name).toBe(`Zed ${'y'.repeat(76)}`)
+  })
+
+  it('a name of only line breaks is refused by PATCH /api/me', async () => {
+    const cookie = await t.verifiedUser('mallory3@example.com')
+    const res = await t.call('/api/me', { method: 'PATCH', cookie, body: { name: '\r\n' } })
+    expect(await json(res)).toEqual({ error: { code: 'validation_failed' } })
+  })
+})
+
+it('PATCH /api/me still refuses a name over 80 characters', async () => {
+  const cookie = await t.verifiedUser('long-name@example.com')
+  const res = await t.call('/api/me', { method: 'PATCH', cookie, body: { name: 'n'.repeat(81) } })
+  expect(await json(res)).toEqual({ error: { code: 'validation_failed' } })
+})
