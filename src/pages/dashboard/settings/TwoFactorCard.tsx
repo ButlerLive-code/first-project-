@@ -4,6 +4,8 @@ import { authClient } from '../../../auth/client'
 import { totpSecret } from '../../../auth/totp'
 import { passwordMessage, setupCodeMessage } from '../../../auth/twoFactorError'
 import { useAuth } from '../../../auth/useAuth'
+import { useHasPassword } from '../../../auth/useHasPassword'
+import { LocalLink } from '../../../i18n/LocalLink'
 import type { Dictionary } from '../../../i18n/en'
 import { message, useT, type Message } from '../../../i18n/useT'
 
@@ -20,6 +22,7 @@ export function TwoFactorCard() {
   const [step, setStep] = useState<Step>({ name: 'idle' })
   const [error, setError] = useState<Message>(null)
   const [busy, setBusy] = useState(false)
+  const { state: passwordState, retry } = useHasPassword()
 
   if (!user) return null
 
@@ -81,13 +84,28 @@ export function TwoFactorCard() {
       {step.name === 'idle' && (
         <>
           <p>{user.twoFactorEnabled ? tf.onText : tf.offText}</p>
-          <button
-            type="button"
-            className="btn btn-outline"
-            onClick={() => goTo({ name: 'password', action: user.twoFactorEnabled ? 'disable' : 'enable' })}
-          >
-            {user.twoFactorEnabled ? tf.disable : tf.enable}
-          </button>
+          {passwordState === 'no' ? (
+            // Turning 2FA on or off asks for the password, which a Google-only account does not have.
+            <p>
+              {tf.needPassword} <LocalLink to="/forgot-password">{tf.needPasswordLink}</LocalLink>
+            </p>
+          ) : passwordState === 'error' ? (
+            <p className="form-error">
+              {t.errors.network}{' '}
+              <button type="button" className="link-button" onClick={retry}>
+                {t.settings.retry}
+              </button>
+            </p>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-outline"
+              disabled={passwordState === 'loading'}
+              onClick={() => goTo({ name: 'password', action: user.twoFactorEnabled ? 'disable' : 'enable' })}
+            >
+              {user.twoFactorEnabled ? tf.disable : tf.enable}
+            </button>
+          )}
         </>
       )}
 

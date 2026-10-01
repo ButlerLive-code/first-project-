@@ -12,9 +12,13 @@ export function googleSignInRequest(next: string, locale: Locale) {
 }
 
 // Which login-page message a ?error=<code> from the OAuth return gets.
-export function googleErrorKey(code: string | null): 'googleCancelled' | 'googleFailed' | null {
+export type GoogleErrorKey = 'googleCancelled' | 'googleFailed' | 'googleNotLinked'
+
+export function googleErrorKey(code: string | null): GoogleErrorKey | null {
   if (!code) return null
-  return code === 'access_denied' ? 'googleCancelled' : 'googleFailed'
+  if (code === 'access_denied') return 'googleCancelled'
+  if (code === 'account_not_linked') return 'googleNotLinked'
+  return 'googleFailed'
 }
 
 // A user who signed up with Google has no credential (password) account.

@@ -18,6 +18,7 @@ it('tells a cancelled Google sign-in from a failed one, and shows nothing withou
   expect(googleErrorKey(null)).toBeNull()
   expect(googleErrorKey('')).toBeNull()
   expect(googleErrorKey('access_denied')).toBe('googleCancelled')
+  expect(googleErrorKey('account_not_linked')).toBe('googleNotLinked')
   expect(googleErrorKey('state_mismatch')).toBe('googleFailed')
   expect(googleErrorKey('unable_to_link_account')).toBe('googleFailed')
 })

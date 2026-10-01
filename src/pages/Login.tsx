@@ -55,6 +55,12 @@ export function Login() {
         {googleError && (
           <p className="form-error" role="alert">
             {t.auth[googleError]}
+            {googleError === 'googleNotLinked' && (
+              <>
+                {' '}
+                <LocalLink to="/forgot-password">{t.login.forgot}</LocalLink>
+              </>
+            )}
           </p>
         )}
         <GoogleButton next={next} />

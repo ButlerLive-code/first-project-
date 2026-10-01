@@ -2,6 +2,8 @@ import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { APIError, createAuthMiddleware, getSessionFromCtx } from 'better-auth/api'
 import { admin, twoFactor } from 'better-auth/plugins'
+import { deleteSessionCookie } from 'better-auth/cookies'
+import { generateRandomString } from 'better-auth/crypto'
 import { adminAc, userAc } from 'better-auth/plugins/admin/access'
 import type { UserLocale } from '../shared/api.ts'
 import type { Config } from './config.ts'
@@ -68,7 +70,10 @@ export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
     },
     session: { expiresIn: THIRTY_DAYS },
     account: {
-      accountLinking: { enabled: true, trustedProviders: ['google'] },
+      // Link Google only to a confirmed local account. Better Auth's default
+      // already refuses an unconfirmed one; with requireEmailVerification off,
+      // that is the only thing stopping a pre-registered account takeover.
+      accountLinking: { enabled: true, trustedProviders: ['google'], requireLocalEmailVerified: true },
     },
     socialProviders: config.google
       ? { google: { clientId: config.google.clientId, clientSecret: config.google.clientSecret } }
@@ -114,8 +119,10 @@ export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
         }
         if (ctx.path === '/delete-user' && !(ctx.body as { password?: unknown } | undefined)?.password) {
           const current = await getSessionFromCtx(ctx)
-          const accounts = current ? await ctx.context.internalAdapter.findAccounts(current.user.id) : []
-          if (!current || accounts.some((a) => a.providerId === 'credential')) {
+          // No session: Better Auth's own unauthorized answer applies.
+          if (!current) return
+          const accounts = await ctx.context.internalAdapter.findAccounts(current.user.id)
+          if (accounts.some((a) => a.providerId === 'credential')) {
             throw new APIError('BAD_REQUEST', { code: 'VALIDATION_ERROR', message: 'password required' })
           }
         }
@@ -124,6 +131,28 @@ export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
       // emails; Better Auth's English message never reaches the browser.
       after: createAuthMiddleware(async (ctx) => {
         if (ctx.path === '/request-password-reset') return ctx.json({ status: true })
+        // The twoFactor plugin only guards password sign-in. A Google sign-in
+        // of a 2FA account must not skip the second step: swap the new session
+        // for the same challenge the password flow sets, and send the browser
+        // to the site's code page.
+        if (ctx.path === '/callback/:id') {
+          const created = ctx.context.newSession
+          const target = ctx.context.responseHeaders?.get('location')
+          if (!created?.user.twoFactorEnabled || !target) return
+          deleteSessionCookie(ctx, true)
+          await ctx.context.internalAdapter.deleteSession(created.session.token)
+          ctx.context.setNewSession(null)
+          const maxAge = 600
+          const cookie = ctx.context.createAuthCookie('two_factor', { maxAge })
+          const identifier = `2fa-${generateRandomString(20)}`
+          const expiresAt = new Date(Date.now() + maxAge * 1000)
+          await ctx.context.internalAdapter.createVerificationValue({ value: created.user.id, identifier, expiresAt })
+          await ctx.context.internalAdapter.createVerificationValue({ value: '0', identifier: `2fa-attempts-${identifier}`, expiresAt })
+          await ctx.setSignedCookie(cookie.name, identifier, ctx.context.secret, cookie.attributes)
+          const to = new URL(target, config.appUrl)
+          const lang = to.pathname === '/ru' || to.pathname.startsWith('/ru/') ? '/ru' : ''
+          throw ctx.redirect(`${lang}/login/2fa?next=${encodeURIComponent(to.pathname + to.search)}`)
+        }
       }),
     },
     plugins: [

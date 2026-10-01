@@ -15,21 +15,25 @@ export function GoogleButton({ next }: { next: string }) {
   const locale = useLocale()
   const { data: config } = useConfig()
   const [error, setError] = useState<Message>(null)
+  const [busy, setBusy] = useState(false)
 
   if (!config?.googleEnabled) return null
 
   async function handleClick() {
     setError(null)
+    setBusy(true)
     try {
       await authCall(() => authClient.signIn.social(googleSignInRequest(next, locale)))
     } catch (err) {
       setError(message((t) => errorMessage(t, err)))
+      setBusy(false)
     }
+    // On success the browser is leaving for Google: stay busy until it does.
   }
 
   return (
     <>
-      <button type="button" className="btn btn-outline form-submit" onClick={handleClick}>
+      <button type="button" className="btn btn-outline form-submit" disabled={busy} onClick={handleClick}>
         {t.auth.google}
       </button>
       {error && <p className="form-error">{error(t)}</p>}

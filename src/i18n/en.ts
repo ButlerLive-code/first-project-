@@ -177,6 +177,8 @@ export const en = {
     google: 'Continue with Google',
     or: 'or',
     googleCancelled: 'Google sign-in was cancelled. You can try again or use your email.',
+    googleNotLinked:
+      "An account with this email already exists but isn't confirmed. Sign in with your password, or reset the password.",
     googleFailed: "We couldn't sign you in with Google. Please try again or use your email.",
   },
   login: {
@@ -441,6 +443,8 @@ export const en = {
       onText: 'On. Every sign-in asks for a code from your authenticator app.',
       enable: 'Turn On',
       disable: 'Turn Off',
+      needPassword: 'Your account has no password yet, so two-step sign-in cannot be changed here. Set a password first with',
+      needPasswordLink: 'Forgot password',
       passwordPrompt: 'Enter your password to continue',
       continue: 'Continue',
       cancel: 'Cancel',
@@ -472,6 +476,7 @@ export const en = {
         text: 'Occasional emails about new locations, features and offers.',
       },
     },
+    retry: 'Try again',
     deleteTitle: 'Delete account',
     deleteText:
       "This permanently removes your profile, devices, subscription and payment history and signs you out everywhere. It can't be undone.",

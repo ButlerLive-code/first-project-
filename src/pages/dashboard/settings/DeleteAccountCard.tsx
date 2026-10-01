@@ -1,49 +1,34 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { errorMessage } from "../../../api/errorMessage";
-import { authClient } from "../../../auth/client";
-import { hasPassword } from "../../../auth/google";
-import { useAuth } from "../../../auth/useAuth";
-import { useLocalNavigate } from "../../../i18n/useLocalNavigate";
-import { message, useT, type Message } from "../../../i18n/useT";
+import { useState, type FormEvent } from 'react'
+import { errorMessage } from '../../../api/errorMessage'
+import { useAuth } from '../../../auth/useAuth'
+import { useHasPassword } from '../../../auth/useHasPassword'
+import { useLocalNavigate } from '../../../i18n/useLocalNavigate'
+import { message, useT, type Message } from '../../../i18n/useT'
 
 export function DeleteAccountCard() {
-  const t = useT();
-  const { deleteAccount } = useAuth();
-  const navigate = useLocalNavigate();
-  const [word, setWord] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<Message>(null);
-  const [busy, setBusy] = useState(false);
-  // null until known. A Google-only account has no password to ask for.
-  const [needsPassword, setNeedsPassword] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    authClient
-      .listAccounts()
-      .then(({ data }) => {
-        if (!cancelled) setNeedsPassword(data ? hasPassword(data) : true);
-      })
-      .catch(() => {
-        if (!cancelled) setNeedsPassword(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const t = useT()
+  const { deleteAccount } = useAuth()
+  const navigate = useLocalNavigate()
+  const [word, setWord] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<Message>(null)
+  const [busy, setBusy] = useState(false)
+  // A Google-only account has no password to ask for.
+  const { state: passwordState, retry } = useHasPassword()
+  const needsPassword = passwordState === 'yes'
 
   async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
+    e.preventDefault()
+    setBusy(true)
+    setError(null)
     try {
-      await deleteAccount(needsPassword ? password : undefined);
+      await deleteAccount(needsPassword ? password : undefined)
       // deleteAccount records `leavingFrom`, so RequireAuth sends the visitor home
       // rather than to /signup while the session store catches up.
-      navigate("/", { replace: true });
+      navigate('/', { replace: true })
     } catch (err) {
-      setError(message((t) => errorMessage(t, err)));
-      setBusy(false);
+      setError(message((t) => errorMessage(t, err)))
+      setBusy(false)
     }
   }
 
@@ -58,11 +43,7 @@ export function DeleteAccountCard() {
             <b>{t.settings.deleteWord}</b>
             {t.settings.typeAfter}
           </span>
-          <input
-            value={word}
-            onChange={(e) => setWord(e.target.value)}
-            autoComplete="off"
-          />
+          <input value={word} onChange={(e) => setWord(e.target.value)} autoComplete="off" />
         </label>
         {needsPassword && (
           <label className="field">
@@ -71,27 +52,32 @@ export function DeleteAccountCard() {
               type="password"
               value={password}
               onChange={(e) => {
-                setPassword(e.target.value);
-                setError(null);
+                setPassword(e.target.value)
+                setError(null)
               }}
               autoComplete="current-password"
             />
           </label>
         )}
+        {passwordState === 'error' && (
+          <p className="form-error">
+            {t.errors.network}{' '}
+            <button type="button" className="link-button" onClick={retry}>
+              {t.settings.retry}
+            </button>
+          </p>
+        )}
         {error && <p className="form-error">{error(t)}</p>}
-        <button
-          type="submit"
-          className="btn btn-danger"
-          disabled={
+        <button type="submit" className="btn btn-danger" disabled={
             busy ||
-            needsPassword === null ||
+            passwordState === 'loading' ||
+            passwordState === 'error' ||
             word !== t.settings.deleteWord ||
             (needsPassword && !password)
-          }
-        >
+          }>
           {t.settings.deleteButton}
         </button>
       </form>
     </div>
-  );
+  )
 }
