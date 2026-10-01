@@ -1,23 +1,37 @@
-import { Link, useParams } from 'react-router'
+import { useParams } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
 import { useConnectHref } from '../auth/useConnectHref'
 import { LoadBar } from '../components/LoadBar'
 import { PageHeader } from '../components/PageHeader'
-import { countries, getCountry } from '../data/servers'
+import { countries, getCountry, placeName, type Country as CountryData } from '../data/servers'
+import { useLocale } from '../i18n/useLocale'
+import { usePageMeta } from '../i18n/usePageMeta'
+import { useT } from '../i18n/useT'
 import { NotFound } from './NotFound'
 
 export function Country() {
   const { slug } = useParams()
-  const connectHref = useConnectHref()
   const country = getCountry(slug)
   if (!country) return <NotFound />
+  return <CountryPage country={country} />
+}
 
-  const nearby = countries.filter((c) => c.region === country.region && c.slug !== country.slug)
+// Split out so the page meta hook only runs for a country that exists.
+function CountryPage({ country }: { country: CountryData }) {
+  const connectHref = useConnectHref()
+  const t = useT()
+  const locale = useLocale()
+  const countryName = placeName(country.name, locale)
+  usePageMeta(t.country.metaTitle(countryName))
+
+  const nearby = countries
+    .filter((c) => c.region === country.region && c.slug !== country.slug)
+    .sort((a, b) => placeName(a.name, locale).localeCompare(placeName(b.name, locale), locale))
 
   return (
     <>
-      <PageHeader eyebrow={country.region} title={`${country.flag} VPN in ${country.name}`}>
-        Browse with a {country.name} IP address on {country.servers.length}{' '}
-        {country.servers.length === 1 ? 'server' : 'servers'}. Fastest ping: {country.bestPing} ms.
+      <PageHeader eyebrow={t.regions[country.region]} title={t.country.title(country.flag, countryName)}>
+        {t.country.text(countryName, country.servers.length, country.bestPing)}
       </PageHeader>
 
       <section className="container page-section">
@@ -25,37 +39,37 @@ export function Country() {
           {country.servers.map((s) => (
             <li key={s.id} className="card server-card">
               <div>
-                <h2 className="card-title">{s.city}</h2>
-                <p className="form-note">{s.premium ? 'Premium' : 'Available on all plans'}</p>
+                <h2 className="card-title">{placeName(s.city, locale)}</h2>
+                <p className="form-note">{s.premium ? t.country.premium : t.country.allPlans}</p>
               </div>
               <dl className="server-stats">
                 <div>
-                  <dt>Ping</dt>
-                  <dd>{s.ping} ms</dd>
+                  <dt>{t.country.ping}</dt>
+                  <dd>{t.servers.ping(s.ping)}</dd>
                 </div>
                 <div>
-                  <dt>Load</dt>
+                  <dt>{t.country.load}</dt>
                   <dd>
                     <LoadBar load={s.load} />
                   </dd>
                 </div>
               </dl>
-              <Link to={connectHref(s.id)} className="btn btn-primary">
-                Connect to {s.city}
-              </Link>
+              <LocalLink to={connectHref(s.id)} className="btn btn-primary">
+                {t.country.connectTo(placeName(s.city, locale))}
+              </LocalLink>
             </li>
           ))}
         </ul>
 
         {nearby.length > 0 && (
           <>
-            <h2 className="subheading">Other locations in {country.region}</h2>
+            <h2 className="subheading">{t.country.otherIn(t.regions[country.region])}</h2>
             <ul className="chips">
               {nearby.map((c) => (
                 <li key={c.slug}>
-                  <Link to={`/countries/${c.slug}`} className="chip">
-                    {c.flag} {c.name}
-                  </Link>
+                  <LocalLink to={`/countries/${c.slug}`} className="chip">
+                    {c.flag} {placeName(c.name, locale)}
+                  </LocalLink>
                 </li>
               ))}
             </ul>
@@ -63,9 +77,9 @@ export function Country() {
         )}
 
         <div className="page-actions">
-          <Link to="/countries" className="btn btn-outline">
-            ← All Countries
-          </Link>
+          <LocalLink to="/countries" className="btn btn-outline">
+            {t.country.allCountries}
+          </LocalLink>
         </div>
       </section>
     </>

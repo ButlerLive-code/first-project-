@@ -2,18 +2,20 @@ import { useState, type FormEvent } from 'react'
 import { PageHeader } from '../components/PageHeader'
 import { SuccessCard } from '../components/SuccessCard'
 import { plans } from '../data/plans'
+import { formatPrice } from '../i18n/format'
+import { useLocale } from '../i18n/useLocale'
+import { usePageMeta } from '../i18n/usePageMeta'
+import { useT } from '../i18n/useT'
 
 const COMMISSION = 0.3
-
-const steps = [
-  { title: 'Apply', text: 'Tell us about your website, channel or community. Approval takes 1–2 days.' },
-  { title: 'Share your link', text: 'Get a personal link and ready-made banners for your audience.' },
-  { title: 'Earn 30%', text: 'Receive 30% of every payment your referrals make for their first year.' },
-]
 
 const paidPlans = plans.filter((p) => p.price > 0)
 
 export function Affiliate() {
+  const t = useT()
+  const a = t.affiliate
+  const locale = useLocale()
+  usePageMeta(a.metaTitle)
   const [referrals, setReferrals] = useState(25)
   const [planId, setPlanId] = useState(paidPlans[0].id)
   const [applied, setApplied] = useState(false)
@@ -27,13 +29,13 @@ export function Affiliate() {
 
   return (
     <>
-      <PageHeader eyebrow="Affiliate Program" title="Earn money recommending LaslesVPN">
-        Share a product your audience will love and earn a 30% commission on every sale.
+      <PageHeader eyebrow={a.eyebrow} title={a.title}>
+        {a.text}
       </PageHeader>
 
       <section className="container page-section">
         <ol className="steps steps-row">
-          {steps.map((s, i) => (
+          {a.steps.map((s, i) => (
             <li key={s.title} className="step">
               <span className="step-number">{i + 1}</span>
               <div>
@@ -46,9 +48,9 @@ export function Affiliate() {
 
         <div className="calculator card">
           <div>
-            <h2 className="section-title">Estimate your earnings</h2>
+            <h2 className="section-title">{a.calcTitle}</h2>
             <label className="field">
-              <span>New paying referrals per month: {referrals}</span>
+              <span>{a.referrals(referrals)}</span>
               <input
                 type="range"
                 min={1}
@@ -66,54 +68,55 @@ export function Affiliate() {
                     checked={planId === p.id}
                     onChange={() => setPlanId(p.id)}
                   />
-                  {p.name}
+                  {t.plans[p.id].name}
                 </label>
               ))}
             </div>
           </div>
           <div className="calculator-result">
-            <p>Estimated commission</p>
-            <p className="calculator-value">${monthly.toLocaleString('en-US', { maximumFractionDigits: 0 })}</p>
-            <p>per month · ${(monthly * 12).toLocaleString('en-US', { maximumFractionDigits: 0 })} per year</p>
+            <p>{a.estimated}</p>
+            <p className="calculator-value">{formatPrice(Math.round(monthly), locale)}</p>
+            <p>{a.perMonthYear(formatPrice(Math.round(monthly * 12), locale))}</p>
           </div>
         </div>
 
         <div className="contact" id="apply">
           <div>
-            <h2 className="section-title">Join the program</h2>
-            <p>Bloggers, YouTubers, review sites and communities of any size are welcome.</p>
+            <h2 className="section-title">{a.joinTitle}</h2>
+            <p>{a.joinText}</p>
           </div>
           {applied ? (
-            <SuccessCard title="Application received!" onReset={() => setApplied(false)} resetLabel="Submit another">
-              <p>We'll review your details and email you within 2 business days (demo — nothing was sent).</p>
+            <SuccessCard title={a.receivedTitle} onReset={() => setApplied(false)} resetLabel={a.submitAnother}>
+              <p>{a.receivedText}</p>
             </SuccessCard>
           ) : (
             <form className="card form" onSubmit={handleSubmit}>
               <div className="field-row">
                 <label className="field">
-                  <span>Name</span>
+                  <span>{a.name}</span>
                   <input name="name" required autoComplete="name" />
                 </label>
                 <label className="field">
-                  <span>Email</span>
+                  <span>{a.email}</span>
                   <input name="email" type="email" required autoComplete="email" />
                 </label>
               </div>
               <label className="field">
-                <span>Website or channel</span>
-                <input name="site" type="url" required placeholder="https://" />
+                <span>{a.site}</span>
+                <input name="site" type="url" required placeholder="https://" />{/* i18n-ignore */}
               </label>
               <label className="field">
-                <span>Monthly audience</span>
+                <span>{a.audience}</span>
                 <select name="audience" defaultValue="1k-10k">
-                  <option value="<1k">Under 1,000</option>
-                  <option value="1k-10k">1,000 – 10,000</option>
-                  <option value="10k-100k">10,000 – 100,000</option>
-                  <option value="100k+">100,000+</option>
+                  {['<1k', '1k-10k', '10k-100k', '100k+'].map((value, i) => (
+                    <option key={value} value={value}>
+                      {a.audiences[i]}
+                    </option>
+                  ))}
                 </select>
               </label>
               <button type="submit" className="btn btn-primary form-submit">
-                Apply Now
+                {a.apply}
               </button>
             </form>
           )}

@@ -1,13 +1,27 @@
-import { Link, useParams } from 'react-router'
-import { formatDate, getPost, posts } from '../data/blog'
+import { useParams } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
+import { getPost, getPosts, type Post } from '../data/blog'
+import { formatDate } from '../i18n/format'
+import { useLocale } from '../i18n/useLocale'
+import { usePageMeta } from '../i18n/usePageMeta'
+import { useT } from '../i18n/useT'
 import { NotFound } from './NotFound'
 
 export function BlogPost() {
   const { slug } = useParams()
-  const post = getPost(slug)
+  const locale = useLocale()
+  const post = getPost(slug, locale)
   if (!post) return <NotFound />
+  return <BlogArticle post={post} />
+}
 
-  const related = posts
+// Split out so the page meta hook only runs for a post that exists.
+function BlogArticle({ post }: { post: Post }) {
+  const t = useT()
+  const locale = useLocale()
+  usePageMeta(post.title, post.excerpt)
+
+  const related = getPosts(locale)
     .filter((p) => p.slug !== post.slug)
     .sort((a, b) => Number(b.category === post.category) - Number(a.category === post.category))
     .slice(0, 3)
@@ -15,12 +29,12 @@ export function BlogPost() {
   return (
     <>
       <article className="container article">
-        <Link to="/blog" className="back-link">
-          ← All articles
-        </Link>
+        <LocalLink to="/blog" className="back-link">
+          {t.blogPost.back}
+        </LocalLink>
         <p className="post-meta">
-          <span className="badge">{post.category}</span> {formatDate(post.date)} · {post.readMinutes}{' '}
-          min read
+          <span className="badge">{t.blog.categories[post.category]}</span>{' '}
+          {formatDate(post.date, locale)} · {t.blog.readTime(post.readMinutes)}
         </p>
         <h1 className="page-title article-title">{post.title}</h1>
         <p className="article-lead">{post.excerpt}</p>
@@ -34,27 +48,28 @@ export function BlogPost() {
         ))}
 
         <div className="notice page-cta">
-          <p>Ready to put this into practice? Start with the Free plan — no card required.</p>
-          <Link to="/#pricing" className="btn btn-primary">
-            Get LaslesVPN
-          </Link>
+          <p>{t.blogPost.cta}</p>
+          <LocalLink to="/#pricing" className="btn btn-primary">
+            {t.blogPost.ctaButton}
+          </LocalLink>
         </div>
       </article>
 
       <section className="container page-section related">
-        <h2 className="subheading">Keep reading</h2>
+        <h2 className="subheading">{t.blogPost.keepReading}</h2>
         <ul className="post-grid">
           {related.map((p) => (
             <li key={p.slug}>
-              <Link to={`/blog/${p.slug}`} className="card post-card quick-link">
+              <LocalLink to={`/blog/${p.slug}`} className="card post-card quick-link">
                 <span className="post-cover" aria-hidden="true">
                   {p.emoji}
                 </span>
                 <span className="post-meta">
-                  <span className="badge">{p.category}</span> {p.readMinutes} min read
+                  <span className="badge">{t.blog.categories[p.category]}</span>{' '}
+                  {t.blog.readTime(p.readMinutes)}
                 </span>
                 <span className="post-title">{p.title}</span>
-              </Link>
+              </LocalLink>
             </li>
           ))}
         </ul>

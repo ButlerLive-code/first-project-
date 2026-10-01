@@ -6,50 +6,29 @@ export type PlanId = 'free' | 'standard' | 'premium'
 
 export interface Plan {
   id: PlanId
-  name: string
   image: string
   price: number
   devices: number
-  perks: string[]
 }
 
 export const plans: Plan[] = [
   {
     id: 'free',
-    name: 'Free Plan',
     image: planFree,
     price: 0,
     devices: 1,
-    perks: ['Unlimited Bandwitch', 'Encrypted Connection', 'No Traffic Logs', 'Works on All Devices'],
   },
   {
     id: 'standard',
-    name: 'Standard Plan',
     image: planStandard,
     price: 9,
     devices: 3,
-    perks: [
-      'Unlimited Bandwitch',
-      'Encrypted Connection',
-      'Yes Traffic Logs',
-      'Works on All Devices',
-      'Connect Anyware',
-    ],
   },
   {
     id: 'premium',
-    name: 'Premium Plan',
     image: planPremium,
     price: 12,
     devices: 6,
-    perks: [
-      'Unlimited Bandwitch',
-      'Encrypted Connection',
-      'Yes Traffic Logs',
-      'Works on All Devices',
-      'Connect Anyware',
-      'Get New Features',
-    ],
   },
 ]
 

@@ -1,21 +1,25 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
 import { PageHeader } from '../components/PageHeader'
-import { countries, regions, type Region } from '../data/servers'
+import { countries, countryMatches, placeName, regions, type Region } from '../data/servers'
+import { useLocale } from '../i18n/useLocale'
+import { usePageMeta } from '../i18n/usePageMeta'
+import { useT } from '../i18n/useT'
 
 export function Countries() {
+  const t = useT()
+  const locale = useLocale()
+  usePageMeta(t.countries.metaTitle)
   const [query, setQuery] = useState('')
   const [region, setRegion] = useState<Region | 'all'>('all')
-  const q = query.trim().toLowerCase()
-  const visible = countries.filter(
-    (c) => (region === 'all' || c.region === region) && c.name.toLowerCase().includes(q),
-  )
+  const visible = countries
+    .filter((c) => (region === 'all' || c.region === region) && countryMatches(c, query))
+    .sort((a, b) => placeName(a.name, locale).localeCompare(placeName(b.name, locale), locale))
 
   return (
     <>
-      <PageHeader eyebrow="Countries" title={`LaslesVPN in ${countries.length} countries`}>
-        Get a local IP address wherever you need one. Free locations are marked — everything else
-        is included in Premium.
+      <PageHeader eyebrow={t.countries.eyebrow} title={t.countries.title(countries.length)}>
+        {t.countries.text}
       </PageHeader>
 
       <section className="container page-section">
@@ -23,10 +27,10 @@ export function Countries() {
           <input
             className="search"
             type="search"
-            placeholder="Search countries…"
+            placeholder={t.countries.searchPlaceholder}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            aria-label="Search countries"
+            aria-label={t.countries.searchLabel}
           />
           <div className="chips">
             {(['all', ...regions] as const).map((r) => (
@@ -36,29 +40,28 @@ export function Countries() {
                 className={`chip${region === r ? ' is-active' : ''}`}
                 onClick={() => setRegion(r)}
               >
-                {r === 'all' ? 'All regions' : r}
+                {r === 'all' ? t.servers.allRegions : t.regions[r]}
               </button>
             ))}
           </div>
         </div>
 
         {visible.length === 0 ? (
-          <p className="empty">No countries match “{query}”.</p>
+          <p className="empty">{t.countries.empty(query)}</p>
         ) : (
           <ul className="country-grid">
             {visible.map((c) => (
               <li key={c.slug}>
-                <Link to={`/countries/${c.slug}`} className="card country-card quick-link">
+                <LocalLink to={`/countries/${c.slug}`} className="card country-card quick-link">
                   <span className="country-flag" aria-hidden="true">
                     {c.flag}
                   </span>
-                  <span className="card-title">{c.name}</span>
+                  <span className="card-title">{placeName(c.name, locale)}</span>
                   <span className="form-note">
-                    {c.servers.length} {c.servers.length === 1 ? 'server' : 'servers'} · from{' '}
-                    {c.bestPing} ms
+                    {t.countries.summary(c.servers.length, c.bestPing)}
                   </span>
-                  {c.freeAvailable && <span className="badge badge-green">Free</span>}
-                </Link>
+                  {c.freeAvailable && <span className="badge badge-green">{t.countries.free}</span>}
+                </LocalLink>
               </li>
             ))}
           </ul>

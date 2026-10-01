@@ -1,29 +1,33 @@
-import { Link } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
+import { useT } from '../i18n/useT'
 import hero from '../assets/hero.svg'
 import iconUser from '../assets/icon-user.svg'
 import iconLocation from '../assets/icon-location.svg'
 import iconServer from '../assets/icon-server.svg'
 
-const stats = [
-  { icon: iconUser, value: '90+', label: 'Users' },
-  { icon: iconLocation, value: '30+', label: 'Locations' },
-  { icon: iconServer, value: '50+', label: 'Servers' },
-]
-
 export function Hero() {
+  const t = useT()
+  const stats = [
+    { icon: iconUser, value: '90+', label: t.hero.users },
+    { icon: iconLocation, value: '30+', label: t.hero.locations },
+    { icon: iconServer, value: '50+', label: t.hero.servers },
+  ]
+
   return (
     <section className="hero container" id="about">
       <div className="hero-content">
         <h1 className="hero-title">
-          Want anything to be easy with <strong>LaslesVPN.</strong>
+          {t.hero.titleBefore}
+          <strong>LaslesVPN.</strong>{/* i18n-ignore */}
         </h1>
         <p className="hero-text">
-          Provide a network for all your needs with ease and fun using <b>LaslesVPN</b> discover
-          interesting features from us.
+          {t.hero.textBefore}
+          <b>LaslesVPN</b>{/* i18n-ignore */}
+          {t.hero.textAfter}
         </p>
-        <Link to="/signup" className="btn btn-primary hero-cta">
-          Get Started
-        </Link>
+        <LocalLink to="/signup" className="btn btn-primary hero-cta">
+          {t.hero.cta}
+        </LocalLink>
       </div>
       <img className="hero-image" src={hero} alt="" width={611} height={382} />
 

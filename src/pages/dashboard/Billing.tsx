@@ -1,27 +1,42 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react'
-import { Link } from 'react-router'
-import { billingLabel, formatDate, renewalDate } from '../../auth/account'
+import { LocalLink } from '../../i18n/LocalLink'
+import { formatDate, renewalDate } from '../../auth/account'
 import type { Payment, User } from '../../auth/context'
 import { useAuth } from '../../auth/useAuth'
+import { formatAmount, formatPrice } from '../../i18n/format'
+import { useLocale } from '../../i18n/useLocale'
+import { usePageMeta } from '../../i18n/usePageMeta'
+import { message, useT, type Message } from '../../i18n/useT'
 import { getPlan } from '../../data/plans'
+import type { Dictionary } from '../../i18n/en'
+import type { Locale } from '../../i18n/locales'
 import { cardBrand, formatCardNumber, formatExpiry, isExpiryValid } from '../../utils/card'
 
-function downloadInvoice(payment: Payment, user: User) {
-  const plan = getPlan(payment.plan)
-  const lines = [
-    'LaslesVPN — Invoice',
-    '',
-    `Invoice:   ${payment.id}`,
-    `Date:      ${formatDate(payment.date)}`,
-    `Billed to: ${user.name} <${user.email}>`,
-    '',
-    `${plan?.name} (${billingLabel(payment.billing)})`,
-    `Paid:      $${payment.amount.toFixed(2)}`,
-    `Card:      ${user.card ? `${user.card.brand} •••• ${user.card.last4}` : '—'}`,
-    '',
-    'Demo invoice: no real payment was taken.',
-  ]
-  const url = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/plain' }))
+// cardBrand() stores 'Card' for unknown brands; show it in the page language.
+function brandLabel(brand: string, t: Dictionary) {
+  return brand === 'Card' ? t.billing.genericCard : brand
+}
+
+// Stored data may be older or odd: fall back to the raw plan id, and to monthly.
+function planName(id: string, t: Dictionary) {
+  return (t.plans as Record<string, { name: string } | undefined>)[id]?.name ?? id
+}
+
+function billingName(billing: string | undefined, t: Dictionary) {
+  return billing === 'yearly' ? t.billing.yearly : t.billing.monthly
+}
+
+function downloadInvoice(payment: Payment, user: User, t: Dictionary, locale: Locale) {
+  const text = t.billing.invoiceText({
+    id: payment.id,
+    date: formatDate(payment.date, locale),
+    billedTo: `${user.name} <${user.email}>`,
+    plan: planName(payment.plan, t),
+    period: billingName(payment.billing, t),
+    amount: formatAmount(payment.amount, locale),
+    card: user.card ? `${brandLabel(user.card.brand, t)} •••• ${user.card.last4}` : '—',
+  })
+  const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }))
   const link = document.createElement('a')
   link.href = url
   link.download = `${payment.id}.txt`
@@ -30,12 +45,15 @@ function downloadInvoice(payment: Payment, user: User) {
 }
 
 export function Billing() {
+  const t = useT()
+  const locale = useLocale()
+  usePageMeta(t.billing.metaTitle)
   const { user, updateUser } = useAuth()
   const [editingCard, setEditingCard] = useState(false)
   const [card, setCard] = useState({ number: '', expiry: '' })
-  const [cardError, setCardError] = useState('')
+  const [cardError, setCardError] = useState<Message>(null)
   const [confirmCancel, setConfirmCancel] = useState(false)
-  const [message, setMessage] = useState('')
+  const [notice, setNotice] = useState<Message>(null)
 
   if (!user) return null
 
@@ -47,32 +65,34 @@ export function Billing() {
   function handleCard(e: ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target
     setCard((prev) => ({ ...prev, [name]: name === 'number' ? formatCardNumber(value) : formatExpiry(value) }))
-    setCardError('')
+    setCardError(null)
   }
 
   function saveCard(e: FormEvent) {
     e.preventDefault()
     const digits = card.number.replace(/\s/g, '')
-    if (digits.length !== 16) return setCardError('Enter a 16-digit card number.')
-    if (!isExpiryValid(card.expiry)) return setCardError('Enter a valid expiry date (MM/YY).')
+    if (digits.length !== 16) return setCardError(message((t) => t.checkout.errors.cardNumber))
+    if (!isExpiryValid(card.expiry)) return setCardError(message((t) => t.checkout.errors.expiry))
     updateUser({ card: { brand: cardBrand(digits), last4: digits.slice(-4), expiry: card.expiry } })
     setEditingCard(false)
     setCard({ number: '', expiry: '' })
-    setMessage('Payment method updated.')
+    setNotice(message((t) => t.billing.cardUpdated))
   }
 
   function cancelPlan() {
+    if (!plan) return
+    const planId = plan.id
     updateUser({ plan: 'free', billing: undefined })
     setConfirmCancel(false)
-    setMessage(`${plan?.name} cancelled. You're now on the Free Plan.`)
+    setNotice(message((t) => t.billing.cancelled(t.plans[planId].name)))
   }
 
   return (
     <div className="account-section">
-      {message && (
+      {notice && (
         <div className="toast" role="status">
-          <span>{message}</span>
-          <button type="button" aria-label="Dismiss" onClick={() => setMessage('')}>
+          <span>{notice(t)}</span>
+          <button type="button" aria-label={t.common.dismiss} onClick={() => setNotice(null)}>
             ×
           </button>
         </div>
@@ -80,78 +100,81 @@ export function Billing() {
 
       <div className="account-grid">
         <div className="card account-card">
-          <h2 className="card-title">Subscription</h2>
+          <h2 className="card-title">{t.billing.subscription}</h2>
           {plan ? (
             <>
               <div className="summary-plan">
                 <img src={plan.image} alt="" width={56} height={64} />
                 <div>
-                  <p className="summary-plan-name">{plan.name}</p>
+                  <p className="summary-plan-name">{t.plans[plan.id].name}</p>
                   <p>
                     {paid
-                      ? `$${plan.price} / month · billed ${billingLabel(user.billing ?? 'monthly').toLowerCase()}`
-                      : 'Free forever'}
+                      ? t.billing[user.billing === 'yearly' ? 'billedYearlyLine' : 'billedMonthlyLine'](
+                          formatPrice(plan.price, locale),
+                        )
+                      : t.checkout.freeForever}
                   </p>
                 </div>
               </div>
               {paid && lastPayment && (
                 <p>
-                  Renews on <b>{formatDate(renewalDate(lastPayment))}</b>
+                  {t.billing.renewsOnBefore}
+                  <b>{formatDate(renewalDate(lastPayment), locale)}</b>
                 </p>
               )}
               <div className="button-row">
                 {plan.id !== 'premium' && (
-                  <Link to="/checkout?plan=premium" className="btn btn-primary">
-                    Upgrade to Premium
-                  </Link>
+                  <LocalLink to="/checkout?plan=premium" className="btn btn-primary">
+                    {t.billing.upgradePremium}
+                  </LocalLink>
                 )}
-                <Link to={`/checkout?plan=${plan.id}`} className="btn btn-outline">
-                  Change Plan
-                </Link>
+                <LocalLink to={`/checkout?plan=${plan.id}`} className="btn btn-outline">
+                  {t.billing.changePlan}
+                </LocalLink>
               </div>
               {paid &&
                 (confirmCancel ? (
                   <div className="confirm">
-                    <p>Cancel {plan.name}? You'll move to the Free Plan right away.</p>
+                    <p>{t.billing.cancelConfirm(t.plans[plan.id].name)}</p>
                     <div className="button-row">
                       <button type="button" className="btn btn-danger btn-sm" onClick={cancelPlan}>
-                        Yes, cancel
+                        {t.billing.yesCancel}
                       </button>
                       <button type="button" className="btn btn-outline btn-sm" onClick={() => setConfirmCancel(false)}>
-                        Keep plan
+                        {t.billing.keepPlan}
                       </button>
                     </div>
                   </div>
                 ) : (
                   <button type="button" className="link-button" onClick={() => setConfirmCancel(true)}>
-                    Cancel subscription
+                    {t.billing.cancelSubscription}
                   </button>
                 ))}
             </>
           ) : (
             <>
-              <p>You don't have a plan yet.</p>
-              <Link to="/checkout" className="btn btn-primary">
-                Choose a Plan
-              </Link>
+              <p>{t.billing.noPlanYet}</p>
+              <LocalLink to="/checkout" className="btn btn-primary">
+                {t.common.choosePlan}
+              </LocalLink>
             </>
           )}
         </div>
 
         <div className="card account-card">
-          <h2 className="card-title">Payment method</h2>
+          <h2 className="card-title">{t.billing.paymentMethod}</h2>
           {user.card && !editingCard && (
             <div className="saved-card">
-              <span className="saved-card-brand">{user.card.brand}</span>
+              <span className="saved-card-brand">{brandLabel(user.card.brand, t)}</span>
               <span>•••• {user.card.last4}</span>
-              <span className="device-meta">Expires {user.card.expiry}</span>
+              <span className="device-meta">{t.billing.expires(user.card.expiry)}</span>
             </div>
           )}
-          {!user.card && !editingCard && <p>No card on file.</p>}
+          {!user.card && !editingCard && <p>{t.billing.noCard}</p>}
           {editingCard ? (
             <form className="form" onSubmit={saveCard}>
               <label className="field">
-                <span>Card number</span>
+                <span>{t.checkout.cardNumber}</span>
                 <input
                   name="number"
                   inputMode="numeric"
@@ -162,23 +185,23 @@ export function Billing() {
                 />
               </label>
               <label className="field">
-                <span>Expiry</span>
+                <span>{t.checkout.expiry}</span>
                 <input
                   name="expiry"
                   inputMode="numeric"
                   autoComplete="cc-exp"
-                  placeholder="MM/YY"
+                  placeholder={t.checkout.expiryPlaceholder}
                   value={card.expiry}
                   onChange={handleCard}
                 />
               </label>
-              {cardError && <p className="form-error">{cardError}</p>}
+              {cardError && <p className="form-error">{cardError(t)}</p>}
               <div className="button-row">
                 <button type="submit" className="btn btn-primary btn-sm">
-                  Save Card
+                  {t.billing.saveCard}
                 </button>
                 <button type="button" className="btn btn-outline btn-sm" onClick={() => setEditingCard(false)}>
-                  Cancel
+                  {t.billing.cancel}
                 </button>
               </div>
             </form>
@@ -188,49 +211,49 @@ export function Billing() {
               className="btn btn-outline"
               onClick={() => {
                 setEditingCard(true)
-                setMessage('')
+                setNotice(null)
               }}
             >
-              {user.card ? 'Update Card' : 'Add Card'}
+              {user.card ? t.billing.updateCard : t.billing.addCard}
             </button>
           )}
         </div>
       </div>
 
       <div className="card account-card">
-        <h2 className="card-title">Payment history</h2>
+        <h2 className="card-title">{t.billing.history}</h2>
         {payments.length ? (
           <div className="table-wrap">
             <table className="table">
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Invoice</th>
-                  <th>Plan</th>
-                  <th>Amount</th>
-                  <th>Status</th>
+                  <th>{t.billing.date}</th>
+                  <th>{t.billing.invoice}</th>
+                  <th>{t.billing.plan}</th>
+                  <th>{t.billing.amount}</th>
+                  <th>{t.billing.status}</th>
                   <th>
-                    <span className="visually-hidden">Download</span>
+                    <span className="visually-hidden">{t.billing.download}</span>
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {payments.map((payment) => (
                   <tr key={payment.id}>
-                    <td>{formatDate(payment.date)}</td>
+                    <td>{formatDate(payment.date, locale)}</td>
                     <td>{payment.id}</td>
                     <td>
-                      {getPlan(payment.plan)?.name} · {billingLabel(payment.billing)}
+                      {planName(payment.plan, t)} · {billingName(payment.billing, t)}
                     </td>
                     <td>
-                      <b>${payment.amount.toFixed(2)}</b>
+                      <b>{formatAmount(payment.amount, locale)}</b>
                     </td>
                     <td>
-                      <span className="badge badge-green">Paid</span>
+                      <span className="badge badge-green">{t.billing.paid}</span>
                     </td>
                     <td>
-                      <button type="button" className="link-button" onClick={() => downloadInvoice(payment, user)}>
-                        Download
+                      <button type="button" className="link-button" onClick={() => downloadInvoice(payment, user, t, locale)}>
+                        {t.billing.download}
                       </button>
                     </td>
                   </tr>
@@ -239,7 +262,7 @@ export function Billing() {
             </table>
           </div>
         ) : (
-          <p>No payments yet. Invoices for paid plans will appear here.</p>
+          <p>{t.billing.noPayments}</p>
         )}
       </div>
     </div>

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { Navigate, useLocation } from 'react-router'
+import { useLocation } from 'react-router'
+import { LocalNavigate } from '../i18n/LocalLink'
 import { useAuth } from './useAuth'
 
 export function RequireAuth({ children }: { children: ReactNode }) {
@@ -8,7 +9,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
   if (!user) {
     const next = location.pathname + location.search
-    return <Navigate to={`/signup?next=${encodeURIComponent(next)}`} replace />
+    return <LocalNavigate to={`/signup?next=${encodeURIComponent(next)}`} replace />
   }
   return children
 }

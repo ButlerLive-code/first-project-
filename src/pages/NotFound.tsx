@@ -1,14 +1,18 @@
-import { Link } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
+import { usePageMeta } from '../i18n/usePageMeta'
+import { useT } from '../i18n/useT'
 
 export function NotFound() {
+  const t = useT()
+  usePageMeta(t.notFound.metaTitle)
   return (
     <section className="placeholder container">
       <p className="eyebrow">404</p>
-      <h1 className="section-title">Page not found</h1>
-      <p>The page you're looking for doesn't exist or has been moved.</p>
-      <Link to="/" className="btn btn-primary">
-        Back to Home
-      </Link>
+      <h1 className="section-title">{t.notFound.title}</h1>
+      <p>{t.notFound.text}</p>
+      <LocalLink to="/" className="btn btn-primary">
+        {t.notFound.back}
+      </LocalLink>
     </section>
   )
 }

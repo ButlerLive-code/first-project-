@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useT } from '../i18n/useT'
 
 interface Props {
   title: string
@@ -7,7 +8,8 @@ interface Props {
   resetLabel?: string
 }
 
-export function SuccessCard({ title, children, onReset, resetLabel = 'Send another' }: Props) {
+export function SuccessCard({ title, children, onReset, resetLabel }: Props) {
+  const t = useT()
   return (
     <div className="card success-card" role="status">
       <span className="success-icon" aria-hidden="true">
@@ -17,7 +19,7 @@ export function SuccessCard({ title, children, onReset, resetLabel = 'Send anoth
       <div>{children}</div>
       {onReset && (
         <button type="button" className="link-button" onClick={onReset}>
-          {resetLabel}
+          {resetLabel ?? t.common.sendAnother}
         </button>
       )}
     </div>

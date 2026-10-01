@@ -1,31 +1,38 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
 import { useAuth } from '../auth/useAuth'
+import { LanguageSwitcher } from '../i18n/LanguageSwitcher'
+import { useT } from '../i18n/useT'
 import logo from '../assets/logo.svg'
-
-const links = [
-  { label: 'About', to: '/#about' },
-  { label: 'Features', to: '/#features' },
-  { label: 'Pricing', to: '/#pricing' },
-  { label: 'Testimonials', to: '/#testimonials' },
-  { label: 'Help', to: '/help' },
-]
 
 export function Header() {
   const [open, setOpen] = useState(false)
   const { user } = useAuth()
+  const t = useT()
+  const links = [
+    { label: t.header.about, to: '/#about' },
+    { label: t.header.features, to: '/#features' },
+    { label: t.header.pricing, to: '/#pricing' },
+    { label: t.header.testimonials, to: '/#testimonials' },
+    { label: t.header.help, to: '/help' },
+  ]
   const close = () => setOpen(false)
 
   return (
     <header className="header container">
-      <Link to="/" className="header-logo" onClick={close}>
-        <img src={logo} alt="LaslesVPN" width={149} height={36} />
-      </Link>
+      <LocalLink to="/" className="header-logo" onClick={close}>
+        <img
+          src={logo}
+          alt="LaslesVPN" // i18n-ignore
+          width={149}
+          height={36}
+        />
+      </LocalLink>
 
       <button
         type="button"
         className="header-burger"
-        aria-label="Menu"
+        aria-label={t.header.menu}
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
@@ -39,28 +46,29 @@ export function Header() {
           <ul className="header-nav">
             {links.map((link) => (
               <li key={link.label}>
-                <Link to={link.to} onClick={close}>
+                <LocalLink to={link.to} onClick={close}>
                   {link.label}
-                </Link>
+                </LocalLink>
               </li>
             ))}
           </ul>
         </nav>
         <div className="header-auth">
           {user ? (
-            <Link to="/dashboard" className="btn header-signup" onClick={close}>
-              My Account
-            </Link>
+            <LocalLink to="/dashboard" className="btn header-signup" onClick={close}>
+              {t.header.myAccount}
+            </LocalLink>
           ) : (
             <>
-              <Link to="/login" className="header-signin" onClick={close}>
-                Sign In
-              </Link>
-              <Link to="/signup" className="btn header-signup" onClick={close}>
-                Sign Up
-              </Link>
+              <LocalLink to="/login" className="header-signin" onClick={close}>
+                {t.header.signIn}
+              </LocalLink>
+              <LocalLink to="/signup" className="btn header-signup" onClick={close}>
+                {t.header.signUp}
+              </LocalLink>
             </>
           )}
+          <LanguageSwitcher onSwitch={close} />
         </div>
       </div>
     </header>

@@ -1,13 +1,20 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
+import { useLocalNavigate } from '../i18n/useLocalNavigate'
+import { safeNext } from '../auth/next'
 import { useAuth } from '../auth/useAuth'
+import { message, useT, type Message } from '../i18n/useT'
+import { usePageMeta } from '../i18n/usePageMeta'
 
 export function Login() {
+  const t = useT()
+  usePageMeta(t.login.metaTitle)
   const { signIn } = useAuth()
-  const navigate = useNavigate()
+  const navigate = useLocalNavigate()
   const [params] = useSearchParams()
-  const next = params.get('next') ?? '/dashboard'
-  const [error, setError] = useState('')
+  const next = safeNext(params.get('next'))
+  const [error, setError] = useState<Message>(null)
   const [resetSent, setResetSent] = useState(false)
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -16,7 +23,7 @@ export function Login() {
     const email = String(form.get('email')).trim()
     const password = String(form.get('password'))
     if (password.length < 6) {
-      setError('Password must be at least 6 characters.')
+      setError(message((t) => t.auth.passwordTooShort))
       return
     }
     signIn(email)
@@ -26,40 +33,38 @@ export function Login() {
   return (
     <section className="auth container">
       <div className="auth-card">
-        <h1 className="auth-title">Welcome back</h1>
-        <p className="auth-subtitle">Sign in to manage your plan and connect to LaslesVPN.</p>
+        <h1 className="auth-title">{t.login.title}</h1>
+        <p className="auth-subtitle">{t.login.subtitle}</p>
 
         <form className="form" onSubmit={handleSubmit}>
           <label className="field">
-            <span>Email</span>
-            <input name="email" type="email" required autoComplete="email" placeholder="you@example.com" />
+            <span>{t.auth.email}</span>
+            <input name="email" type="email" required autoComplete="email" placeholder={t.auth.emailPlaceholder} />
           </label>
           <label className="field">
-            <span>Password</span>
+            <span>{t.auth.password}</span>
             <input
               name="password"
               type="password"
               required
               autoComplete="current-password"
               placeholder="••••••••"
-              onChange={() => setError('')}
+              onChange={() => setError(null)}
             />
           </label>
-          {error && <p className="form-error">{error}</p>}
+          {error && <p className="form-error">{error(t)}</p>}
           <button type="button" className="link-button" onClick={() => setResetSent(true)}>
-            Forgot password?
+            {t.login.forgot}
           </button>
-          {resetSent && (
-            <p className="form-note">If an account exists, we've sent a reset link to your email.</p>
-          )}
+          {resetSent && <p className="form-note">{t.login.resetSent}</p>}
           <button type="submit" className="btn btn-primary form-submit">
-            Sign In
+            {t.login.submit}
           </button>
         </form>
 
         <p className="auth-switch">
-          New to LaslesVPN?{' '}
-          <Link to={`/signup?next=${encodeURIComponent(next)}`}>Create an account</Link>
+          {t.login.newHere}{' '}
+          <LocalLink to={`/signup?next=${encodeURIComponent(next)}`}>{t.login.createAccount}</LocalLink>
         </p>
       </div>
     </section>
