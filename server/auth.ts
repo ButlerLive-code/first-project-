@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { APIError, createAuthMiddleware, getSessionFromCtx } from 'better-auth/api'
+import { APIError, createAuthMiddleware, getSessionFromCtx, isAPIError } from 'better-auth/api'
 import { admin, twoFactor } from 'better-auth/plugins'
 import { createHash } from 'node:crypto'
 import { and, eq, ne } from 'drizzle-orm'
@@ -29,6 +29,10 @@ function userLocale(user: object): UserLocale {
 const THIRTY_DAYS = 60 * 60 * 24 * 30
 
 export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
+  // The session that asked for an email change, by request: the before hook
+  // reads it, the change mail stores it with the link.
+  const changeRequester = new WeakMap<Request, string>()
+
   async function sendMail(
     kind: MailKind,
     user: { email: string; name: string },
@@ -61,15 +65,18 @@ export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
       sendOnSignUp: true,
       expiresIn: 60 * 60 * 24,
       // Also used for a changed address: Better Auth passes the new email as user.email.
-      sendVerificationEmail: async ({ user, token }) => {
+      sendVerificationEmail: async ({ user, token }, request) => {
         const kind = isEmailChangeToken(token) ? 'changeEmail' : 'verifyEmail'
         // Better Auth's change link names only the old address. Remember which
         // account asked, so the link works once and only for that account.
+        // The session that asked is kept too: it is the one that stays signed
+        // in once the change is confirmed.
         if (kind === 'changeEmail') {
+          const asked: ChangeRequest = { userId: user.id, sessionId: (request && changeRequester.get(request)) ?? null }
           await db.insert(schema.verification).values({
             id: crypto.randomUUID(),
             identifier: changeLinkId(token),
-            value: user.id,
+            value: JSON.stringify(asked),
             expiresAt: new Date(Date.now() + 60 * 60 * 24 * 1000),
           })
         }
@@ -145,8 +152,15 @@ export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
         // its payload, and Better Auth would sign in whoever opens it. Refuse it
         // unless that address still belongs to the account that asked.
         if (ctx.path === '/verify-email') {
-          const payload = changeEmailPayload((ctx.query as { token?: unknown } | undefined)?.token)
+          const query = ctx.query as { token?: unknown; callbackURL?: unknown } | undefined
+          const payload = changeEmailPayload(query?.token)
           if (!payload) return
+          // With a callbackURL Better Auth answers success with a redirect,
+          // which the after hook could not tell from a failure. The site never
+          // sends one.
+          if (query?.callbackURL !== undefined) {
+            throw new APIError('BAD_REQUEST', { code: 'VALIDATION_ERROR', message: 'callbackURL not allowed' })
+          }
           const [owner] = await db.select().from(schema.user).where(eq(schema.user.email, payload.email.toLowerCase()))
           // The account that asked must still own the old address. A link for a
           // deleted account, or for one that later re-registered the address,
@@ -155,7 +169,7 @@ export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
             .select()
             .from(schema.verification)
             .where(eq(schema.verification.identifier, changeLinkId(String((ctx.query as { token?: unknown }).token))))
-          if (!owner || !asked || asked.value !== owner.id || asked.expiresAt < new Date()) {
+          if (!owner || !asked || changeRequest(asked.value)?.userId !== owner.id || asked.expiresAt < new Date()) {
             throw new APIError('BAD_REQUEST', { code: 'INVALID_TOKEN', message: 'invalid token' })
           }
           const [taken] = await db.select().from(schema.user).where(eq(schema.user.email, payload.updateTo.toLowerCase()))
@@ -170,6 +184,7 @@ export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
           if (current && !current.user.emailVerified) {
             throw new APIError('FORBIDDEN', { code: 'EMAIL_NOT_VERIFIED', message: 'email not verified' })
           }
+          if (current && ctx.request) changeRequester.set(ctx.request, current.session.id)
         }
         if (ctx.path === '/delete-user' && !(ctx.body as { password?: unknown } | undefined)?.password) {
           const current = await getSessionFromCtx(ctx)
@@ -185,18 +200,39 @@ export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
       // emails; Better Auth's English message never reaches the browser.
       after: createAuthMiddleware(async (ctx) => {
         if (ctx.path === '/request-password-reset') return ctx.json({ status: true })
-        // A confirmed address change signs the account's other devices out;
-        // this browser (or the one the link just signed in) stays.
+        // A confirmed address change keeps only the session that asked for it.
+        // Whoever else opens the link (another browser, a signed-in phone) is
+        // not signed in by it: the link proves access to the mailbox, not the
+        // password or the second step.
         if (ctx.path === '/verify-email') {
-          const payload = changeEmailPayload((ctx.query as { token?: unknown } | undefined)?.token)
-          if (!payload) return
-          const [changed] = await db.select().from(schema.user).where(eq(schema.user.email, payload.updateTo.toLowerCase()))
-          if (!changed || changed.emailVerified !== true) return
-          await db.delete(schema.verification).where(eq(schema.verification.identifier, changeLinkId(String((ctx.query as { token?: unknown }).token))))
-          const keep = ctx.context.newSession?.session.token ?? (await getSessionFromCtx(ctx))?.session.token
-          await db
-            .delete(schema.session)
-            .where(keep ? and(eq(schema.session.userId, changed.id), ne(schema.session.token, keep)) : eq(schema.session.userId, changed.id))
+          const token = (ctx.query as { token?: unknown } | undefined)?.token
+          if (!changeEmailPayload(token)) return
+          // A failed confirmation (expired, used, lost a race) touches nothing.
+          if (isAPIError(ctx.context.returned)) return
+          // Claiming the link row is atomic: of two simultaneous opens only one
+          // gets it and revokes sessions.
+          const [claimed] = await db
+            .delete(schema.verification)
+            .where(eq(schema.verification.identifier, changeLinkId(String(token))))
+            .returning()
+          const asked = claimed ? changeRequest(claimed.value) : null
+          const browser = ctx.context.newSession
+          const signedOut = Boolean(browser && browser.session.id !== asked?.sessionId)
+          if (browser && signedOut) {
+            deleteSessionCookie(ctx, true)
+            await ctx.context.internalAdapter.deleteSession(browser.session.token)
+            ctx.context.setNewSession(null)
+          }
+          if (asked) {
+            await db
+              .delete(schema.session)
+              .where(
+                asked.sessionId
+                  ? and(eq(schema.session.userId, asked.userId), ne(schema.session.id, asked.sessionId))
+                  : eq(schema.session.userId, asked.userId),
+              )
+          }
+          if (signedOut) return ctx.json({ status: true, user: null })
         }
         // The twoFactor plugin only guards password sign-in. A Google sign-in
         // of a 2FA account must not skip the second step: swap the new session
@@ -248,6 +284,22 @@ function changeEmailPayload(token: unknown) {
     }
     if (typeof payload.updateTo !== 'string' || typeof payload.email !== 'string') return null
     return { email: payload.email, updateTo: payload.updateTo }
+  } catch {
+    return null
+  }
+}
+
+// What the change-email row remembers: the account and the session that asked.
+interface ChangeRequest {
+  userId: string
+  sessionId: string | null
+}
+
+function changeRequest(value: string): ChangeRequest | null {
+  try {
+    const parsed = JSON.parse(value) as Partial<ChangeRequest>
+    if (typeof parsed.userId !== 'string') return null
+    return { userId: parsed.userId, sessionId: typeof parsed.sessionId === 'string' ? parsed.sessionId : null }
   } catch {
     return null
   }

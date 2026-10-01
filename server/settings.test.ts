@@ -82,6 +82,73 @@ describe('change email', () => {
     expect((await t.call('/api/me', { cookie: phone })).status).toBe(401)
   })
 
+  it('confirmed in the browser that asked: that session stays, every other one ends', async () => {
+    const laptop = await t.verifiedUser('same-browser@example.com')
+    const { cookie: phone } = await t.signIn('same-browser@example.com')
+    await t.call('/api/auth/change-email', { method: 'POST', cookie: laptop, body: { newEmail: 'same-browser2@example.com' } })
+    const token = t.tokenIn(await t.lastMail('same-browser2@example.com'))
+    const res = await t.call(`/api/auth/verify-email?token=${token}`, { cookie: laptop })
+    expect(res.status).toBe(200)
+    expect((await json<{ user: { email: string } }>(await t.call('/api/me', { cookie: mergeCookies(laptop, res) }))).user.email).toBe(
+      'same-browser2@example.com',
+    )
+    expect((await t.call('/api/me', { cookie: phone })).status).toBe(401)
+    const [u] = await t.db.select().from(userTable).where(eq(userTable.email, 'same-browser2@example.com'))
+    expect(await t.db.select().from(sessionTable).where(eq(sessionTable.userId, u.id))).toHaveLength(1)
+  })
+
+  it('confirmed in a browser with no session: the email changes, nobody is signed in there, the asker stays', async () => {
+    const laptop = await t.verifiedUser('other-browser@example.com')
+    await t.call('/api/auth/change-email', { method: 'POST', cookie: laptop, body: { newEmail: 'other-browser2@example.com' } })
+    const token = t.tokenIn(await t.lastMail('other-browser2@example.com'))
+    const res = await t.call(`/api/auth/verify-email?token=${token}`)
+    expect(res.status).toBe(200)
+    expect(await json(res)).toEqual({ status: true, user: null })
+    const cookie = mergeCookies('', res)
+    expect(cookie).not.toContain('session_token')
+    expect((await t.call('/api/me', { cookie })).status).toBe(401)
+    const me = await json<{ user: { email: string } }>(await t.call('/api/me', { cookie: laptop }))
+    expect(me.user.email).toBe('other-browser2@example.com')
+    const [u] = await t.db.select().from(userTable).where(eq(userTable.email, 'other-browser2@example.com'))
+    expect(await t.db.select().from(sessionTable).where(eq(sessionTable.userId, u.id))).toHaveLength(1)
+  })
+
+  it('confirmed on another device signed in to the same account: that device is signed out, the asker stays', async () => {
+    const laptop = await t.verifiedUser('phone-confirm@example.com')
+    const { cookie: phone } = await t.signIn('phone-confirm@example.com')
+    await t.call('/api/auth/change-email', { method: 'POST', cookie: laptop, body: { newEmail: 'phone-confirm2@example.com' } })
+    const token = t.tokenIn(await t.lastMail('phone-confirm2@example.com'))
+    const res = await t.call(`/api/auth/verify-email?token=${token}`, { cookie: phone })
+    expect(res.status).toBe(200)
+    expect((await t.call('/api/me', { cookie: mergeCookies(phone, res) })).status).toBe(401)
+    expect((await t.call('/api/me', { cookie: laptop })).status).toBe(200)
+  })
+
+  it('two opens of one link at once: the loser changes nothing and the asker stays signed in', async () => {
+    const laptop = await t.verifiedUser('race-open@example.com')
+    await t.call('/api/auth/change-email', { method: 'POST', cookie: laptop, body: { newEmail: 'race-open2@example.com' } })
+    const token = t.tokenIn(await t.lastMail('race-open2@example.com'))
+    const [a, b] = await Promise.all([
+      t.call(`/api/auth/verify-email?token=${token}`, { cookie: laptop }),
+      t.call(`/api/auth/verify-email?token=${token}`),
+    ])
+    expect([a.status, b.status]).toContain(200)
+    expect(mergeCookies('', b)).not.toContain('session_token')
+    const me = await t.call('/api/me', { cookie: mergeCookies(laptop, a) })
+    expect(me.status).toBe(200)
+    expect((await json<{ user: { email: string } }>(me)).user.email).toBe('race-open2@example.com')
+  })
+
+  it('a change link refuses a callbackURL, so the result cannot skip the session checks', async () => {
+    const laptop = await t.verifiedUser('callback@example.com')
+    await t.call('/api/auth/change-email', { method: 'POST', cookie: laptop, body: { newEmail: 'callback2@example.com' } })
+    const token = t.tokenIn(await t.lastMail('callback2@example.com'))
+    const res = await t.call(`/api/auth/verify-email?token=${token}&callbackURL=%2Fdashboard`)
+    expect(res.status).toBe(400)
+    expect(res.headers.getSetCookie()).toEqual([])
+    expect((await json<{ user: { email: string } }>(await t.call('/api/me', { cookie: laptop }))).user.email).toBe('callback@example.com')
+  })
+
   it('an address taken before the link is opened answers email_taken and changes nothing', async () => {
     const cookie = await t.verifiedUser('race@example.com')
     await t.call('/api/auth/change-email', { method: 'POST', cookie, body: { newEmail: 'later@example.com' } })

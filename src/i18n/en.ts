@@ -226,6 +226,8 @@ export const en = {
     checking: 'Checking your link…',
     successTitle: 'Email confirmed',
     successText: 'Thank you! Your email address is confirmed.',
+    changedTitle: 'New email confirmed',
+    changedText: 'Sign in with your new address. For your security, confirming the change did not sign you in on this device.',
     expiredTitle: 'The link has expired',
     expiredText: 'Confirmation links work for 24 hours. Sign in and send a new one from your account.',
     invalidTitle: 'The link is invalid',

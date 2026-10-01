@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router'
 import { authCall } from '../auth/authCall'
 import { authClient } from '../auth/client'
 import { useAuth } from '../auth/useAuth'
-import { verifyOutcome } from '../auth/verify'
+import { verifyOutcome, verifyResult } from '../auth/verify'
 import { LocalLink } from '../i18n/LocalLink'
 import { usePageMeta } from '../i18n/usePageMeta'
 import { useT } from '../i18n/useT'
@@ -37,12 +37,16 @@ export function VerifyEmail() {
     )
   }, [token, refresh])
 
+  // A new address confirmed in a browser that did not ask for it signs nobody
+  // in there (the server drops that session): ask to sign in with it.
+  const shown = verifyResult(result, token, Boolean(user))
   const copy = {
     checking: { title: t.verify.checking, text: '' },
     success: { title: t.verify.successTitle, text: t.verify.successText },
+    changed: { title: t.verify.changedTitle, text: t.verify.changedText },
     expired: { title: t.verify.expiredTitle, text: t.verify.expiredText },
     invalid: { title: t.verify.invalidTitle, text: t.verify.invalidText },
-  }[result]
+  }[shown]
 
   return (
     <section className="auth container">

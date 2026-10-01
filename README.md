@@ -109,8 +109,9 @@ right away, but checkout needs a confirmed email. Password reset links are singl
 two-step sign-in (TOTP and backup codes) on and off and change their name. They can also:
 
 - change their email, but only once the current email is confirmed; the change takes effect when
-  the link sent to the new address is opened, which signs out their other devices. Those links are
-  single-use;
+  the link sent to the new address is opened. Only the browser session that asked for the change
+  stays signed in; every other session ends, and opening the link elsewhere (another browser or
+  device) confirms the address without signing anyone in there. Those links are single-use;
 - change their password, which ends their other sessions;
 - list active sessions (the "This device" badge marks the current one) and sign out on all devices,
   which also signs out the current one;
