@@ -21,8 +21,8 @@ export function getDevices(user: User, defaultName: (platform?: string) => strin
   return [
     {
       id: 'this-device',
-      name: // Platform names are not translated, so the language does not matter here.
-      defaultName(getPlatform(platform, 'en')?.name),
+      // Platform names are not translated, so the language does not matter here.
+      name: defaultName(getPlatform(platform, 'en')?.name),
       platform,
       addedAt: user.memberSince,
       current: true,

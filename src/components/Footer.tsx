@@ -47,7 +47,6 @@ export function Footer() {
     },
   ]
 
-
   function handleSubscribe(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setSubscribed(String(new FormData(e.currentTarget).get('email')))

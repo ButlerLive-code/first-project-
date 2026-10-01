@@ -125,7 +125,7 @@ export const en = {
   testimonials: {
     title: 'Trusted by Thousands of Happy Customer',
     text: 'These are the stories of our customers who have joined us with great pleasure when using this crazy feature.',
-    stars: 'stars',
+    stars: (rating: number) => plural('en', rating, { one: 'stars', other: 'stars' }),
     showReview: (n: number) => `Show review ${n}`,
     previous: 'Previous',
     next: 'Next',
@@ -244,7 +244,9 @@ export const en = {
     memberSince: 'Member since',
     manageBilling: 'Manage Billing',
     noActivePlan: 'No active plan.',
-    devicesInUse: (used: number, limit: number) => `${used} of ${limit} devices in use`,
+    // Text around the two bold numbers: [before, between, after].
+    devicesInUse: (limit: number): [string, string, string] =>
+      ['', ' of ', ` ${plural('en', limit, { one: 'devices', other: 'devices' })} in use`],
     manageDevices: 'Manage Devices',
     getMost: 'Get the most out of LaslesVPN',
     quickLinks: [
@@ -471,6 +473,7 @@ export const en = {
     signUpAfter: ' to sign in.',
     recommended: 'Recommended for you',
     version: (version: string) => `Version ${version}`,
+    size: (mb: number) => `${mb} MB`,
     download: 'Download',
     setupGuide: 'Setup guide →',
     needAccount: "You'll need a LaslesVPN account to sign in to the app — it's free to start.",

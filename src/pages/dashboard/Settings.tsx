@@ -4,7 +4,7 @@ import { getPreferences } from '../../auth/account'
 import type { Preferences } from '../../auth/context'
 import { useAuth } from '../../auth/useAuth'
 import { usePageMeta } from '../../i18n/usePageMeta'
-import { useT } from '../../i18n/useT'
+import { message, useT, type Message } from '../../i18n/useT'
 
 const toggleKeys: (keyof Preferences)[] = ['autoConnect', 'killSwitch', 'newsletter']
 
@@ -16,9 +16,9 @@ export function Settings() {
   const t = useT()
   usePageMeta(t.settings.metaTitle)
   const [profileSaved, setProfileSaved] = useState(false)
-  const [profileError, setProfileError] = useState('')
+  const [profileError, setProfileError] = useState<Message>(null)
   const [passwordSaved, setPasswordSaved] = useState(false)
-  const [passwordError, setPasswordError] = useState('')
+  const [passwordError, setPasswordError] = useState<Message>(null)
   const [deleteText, setDeleteText] = useState('')
 
   if (!user) return null
@@ -30,8 +30,8 @@ export function Settings() {
     const data = new FormData(e.currentTarget)
     const name = String(data.get('name')).trim()
     const email = String(data.get('email')).trim().toLowerCase()
-    if (!name) return setProfileError(t.settings.enterName)
-    if (!EMAIL.test(email)) return setProfileError(t.settings.invalidEmail)
+    if (!name) return setProfileError(message((t) => t.settings.enterName))
+    if (!EMAIL.test(email)) return setProfileError(message((t) => t.settings.invalidEmail))
     updateUser({ name, email })
     setProfileSaved(true)
   }
@@ -41,9 +41,9 @@ export function Settings() {
     const form = e.currentTarget
     const data = new FormData(form)
     const next = String(data.get('next'))
-    if (!String(data.get('current'))) return setPasswordError(t.settings.enterCurrent)
-    if (next.length < 6) return setPasswordError(t.settings.newTooShort)
-    if (next !== String(data.get('confirm'))) return setPasswordError(t.settings.mismatch)
+    if (!String(data.get('current'))) return setPasswordError(message((t) => t.settings.enterCurrent))
+    if (next.length < 6) return setPasswordError(message((t) => t.settings.newTooShort))
+    if (next !== String(data.get('confirm'))) return setPasswordError(message((t) => t.settings.mismatch))
     // Demo: passwords are never stored, so there is nothing to compare or save.
     form.reset()
     setPasswordSaved(true)
@@ -68,7 +68,7 @@ export function Settings() {
         <h2 className="card-title">{t.settings.profile}</h2>
         <form className="form" noValidate onSubmit={handleProfile} onChange={() => {
           setProfileSaved(false)
-          setProfileError('')
+          setProfileError(null)
         }}>
           <label className="field">
             <span>{t.signup.fullName}</span>
@@ -78,7 +78,7 @@ export function Settings() {
             <span>{t.auth.email}</span>
             <input name="email" type="email" defaultValue={user.email} autoComplete="email" required />
           </label>
-          {profileError && <p className="form-error">{profileError}</p>}
+          {profileError && <p className="form-error">{profileError(t)}</p>}
           <button type="submit" className="btn btn-outline">
             {profileSaved ? t.settings.saved : t.settings.saveChanges}
           </button>
@@ -89,7 +89,7 @@ export function Settings() {
         <h2 className="card-title">{t.settings.password}</h2>
         <form className="form" onSubmit={handlePassword} onChange={() => {
           setPasswordSaved(false)
-          setPasswordError('')
+          setPasswordError(null)
         }}>
           <label className="field">
             <span>{t.settings.currentPassword}</span>
@@ -105,7 +105,7 @@ export function Settings() {
               <input name="confirm" type="password" autoComplete="new-password" />
             </label>
           </div>
-          {passwordError && <p className="form-error">{passwordError}</p>}
+          {passwordError && <p className="form-error">{passwordError(t)}</p>}
           {passwordSaved && (
             <p className="form-note" role="status">
               {t.settings.passwordUpdated}

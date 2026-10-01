@@ -87,6 +87,7 @@ function App() {
     <Routes>
       <Route
         path="ru"
+        caseSensitive
         element={
           <LocaleProvider locale="ru">
             <Layout />

@@ -89,7 +89,7 @@ export function Download() {
               </span>
               <h2 className="card-title">{p.name}</h2>
               <p className="platform-meta">
-                {t.download.version(p.version)} · {p.size}
+                {t.download.version(p.version)} · {t.download.size(p.sizeMb)}
                 <br />
                 {p.requirements}
               </p>

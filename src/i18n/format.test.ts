@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDate, formatMonthYear, formatNumber, formatPrice } from './format'
+import { formatDate, formatDecimal, formatMonthYear, formatNumber, formatPrice } from './format'
 
 // Intl separates groups and currency with (narrow) no-break spaces.
 const plain = (s: string) => s.replace(/\s/g, ' ')
@@ -24,6 +24,12 @@ it('formatMonthYear', () => {
 it('formatNumber', () => {
   expect(formatNumber(12345, 'en')).toBe('12,345')
   expect(plain(formatNumber(12345, 'ru'))).toBe('12 345')
+})
+
+it('formatDecimal', () => {
+  expect(formatDecimal(4.5, 'en')).toBe('4.5')
+  expect(formatDecimal(4.5, 'ru')).toBe('4,5')
+  expect(formatDecimal(5, 'ru')).toBe('5')
 })
 
 it('formatPrice', () => {

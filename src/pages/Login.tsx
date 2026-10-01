@@ -4,7 +4,7 @@ import { LocalLink } from '../i18n/LocalLink'
 import { useLocalNavigate } from '../i18n/useLocalNavigate'
 import { safeNext } from '../auth/next'
 import { useAuth } from '../auth/useAuth'
-import { useT } from '../i18n/useT'
+import { message, useT, type Message } from '../i18n/useT'
 import { usePageMeta } from '../i18n/usePageMeta'
 
 export function Login() {
@@ -14,7 +14,7 @@ export function Login() {
   const navigate = useLocalNavigate()
   const [params] = useSearchParams()
   const next = safeNext(params.get('next'))
-  const [error, setError] = useState('')
+  const [error, setError] = useState<Message>(null)
   const [resetSent, setResetSent] = useState(false)
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -23,7 +23,7 @@ export function Login() {
     const email = String(form.get('email')).trim()
     const password = String(form.get('password'))
     if (password.length < 6) {
-      setError(t.auth.passwordTooShort)
+      setError(message((t) => t.auth.passwordTooShort))
       return
     }
     signIn(email)
@@ -49,10 +49,10 @@ export function Login() {
               required
               autoComplete="current-password"
               placeholder="••••••••"
-              onChange={() => setError('')}
+              onChange={() => setError(null)}
             />
           </label>
-          {error && <p className="form-error">{error}</p>}
+          {error && <p className="form-error">{error(t)}</p>}
           <button type="button" className="link-button" onClick={() => setResetSent(true)}>
             {t.login.forgot}
           </button>

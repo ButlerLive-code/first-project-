@@ -1,6 +1,6 @@
 import { useParams } from 'react-router'
 import { LocalLink } from '../i18n/LocalLink'
-import { getPost, getPosts } from '../data/blog'
+import { getPost, getPosts, type Post } from '../data/blog'
 import { formatDate } from '../i18n/format'
 import { useLocale } from '../i18n/useLocale'
 import { usePageMeta } from '../i18n/usePageMeta'
@@ -8,12 +8,18 @@ import { useT } from '../i18n/useT'
 import { NotFound } from './NotFound'
 
 export function BlogPost() {
+  const { slug } = useParams()
+  const locale = useLocale()
+  const post = getPost(slug, locale)
+  if (!post) return <NotFound />
+  return <BlogArticle post={post} />
+}
+
+// Split out so the page meta hook only runs for a post that exists.
+function BlogArticle({ post }: { post: Post }) {
   const t = useT()
   const locale = useLocale()
-  const { slug } = useParams()
-  const post = getPost(slug, locale)
-  usePageMeta(post?.title, post?.excerpt)
-  if (!post) return <NotFound />
+  usePageMeta(post.title, post.excerpt)
 
   const related = getPosts(locale)
     .filter((p) => p.slug !== post.slug)

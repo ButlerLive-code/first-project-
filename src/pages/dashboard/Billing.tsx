@@ -6,7 +6,7 @@ import { useAuth } from '../../auth/useAuth'
 import { formatAmount, formatPrice } from '../../i18n/format'
 import { useLocale } from '../../i18n/useLocale'
 import { usePageMeta } from '../../i18n/usePageMeta'
-import { useT } from '../../i18n/useT'
+import { message, useT, type Message } from '../../i18n/useT'
 import { getPlan } from '../../data/plans'
 import type { Dictionary } from '../../i18n/en'
 import type { Locale } from '../../i18n/locales'
@@ -17,13 +17,22 @@ function brandLabel(brand: string, t: Dictionary) {
   return brand === 'Card' ? t.billing.genericCard : brand
 }
 
+// Stored data may be older or odd: fall back to the raw plan id, and to monthly.
+function planName(id: string, t: Dictionary) {
+  return (t.plans as Record<string, { name: string } | undefined>)[id]?.name ?? id
+}
+
+function billingName(billing: string | undefined, t: Dictionary) {
+  return billing === 'yearly' ? t.billing.yearly : t.billing.monthly
+}
+
 function downloadInvoice(payment: Payment, user: User, t: Dictionary, locale: Locale) {
   const text = t.billing.invoiceText({
     id: payment.id,
     date: formatDate(payment.date, locale),
     billedTo: `${user.name} <${user.email}>`,
-    plan: t.plans[payment.plan].name,
-    period: t.billing[payment.billing],
+    plan: planName(payment.plan, t),
+    period: billingName(payment.billing, t),
     amount: formatAmount(payment.amount, locale),
     card: user.card ? `${brandLabel(user.card.brand, t)} •••• ${user.card.last4}` : '—',
   })
@@ -42,9 +51,9 @@ export function Billing() {
   const { user, updateUser } = useAuth()
   const [editingCard, setEditingCard] = useState(false)
   const [card, setCard] = useState({ number: '', expiry: '' })
-  const [cardError, setCardError] = useState('')
+  const [cardError, setCardError] = useState<Message>(null)
   const [confirmCancel, setConfirmCancel] = useState(false)
-  const [message, setMessage] = useState('')
+  const [notice, setNotice] = useState<Message>(null)
 
   if (!user) return null
 
@@ -56,33 +65,34 @@ export function Billing() {
   function handleCard(e: ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target
     setCard((prev) => ({ ...prev, [name]: name === 'number' ? formatCardNumber(value) : formatExpiry(value) }))
-    setCardError('')
+    setCardError(null)
   }
 
   function saveCard(e: FormEvent) {
     e.preventDefault()
     const digits = card.number.replace(/\s/g, '')
-    if (digits.length !== 16) return setCardError(t.checkout.errors.cardNumber)
-    if (!isExpiryValid(card.expiry)) return setCardError(t.checkout.errors.expiry)
+    if (digits.length !== 16) return setCardError(message((t) => t.checkout.errors.cardNumber))
+    if (!isExpiryValid(card.expiry)) return setCardError(message((t) => t.checkout.errors.expiry))
     updateUser({ card: { brand: cardBrand(digits), last4: digits.slice(-4), expiry: card.expiry } })
     setEditingCard(false)
     setCard({ number: '', expiry: '' })
-    setMessage(t.billing.cardUpdated)
+    setNotice(message((t) => t.billing.cardUpdated))
   }
 
   function cancelPlan() {
     if (!plan) return
+    const planId = plan.id
     updateUser({ plan: 'free', billing: undefined })
     setConfirmCancel(false)
-    setMessage(t.billing.cancelled(t.plans[plan.id].name))
+    setNotice(message((t) => t.billing.cancelled(t.plans[planId].name)))
   }
 
   return (
     <div className="account-section">
-      {message && (
+      {notice && (
         <div className="toast" role="status">
-          <span>{message}</span>
-          <button type="button" aria-label={t.common.dismiss} onClick={() => setMessage('')}>
+          <span>{notice(t)}</span>
+          <button type="button" aria-label={t.common.dismiss} onClick={() => setNotice(null)}>
             ×
           </button>
         </div>
@@ -185,7 +195,7 @@ export function Billing() {
                   onChange={handleCard}
                 />
               </label>
-              {cardError && <p className="form-error">{cardError}</p>}
+              {cardError && <p className="form-error">{cardError(t)}</p>}
               <div className="button-row">
                 <button type="submit" className="btn btn-primary btn-sm">
                   {t.billing.saveCard}
@@ -201,7 +211,7 @@ export function Billing() {
               className="btn btn-outline"
               onClick={() => {
                 setEditingCard(true)
-                setMessage('')
+                setNotice(null)
               }}
             >
               {user.card ? t.billing.updateCard : t.billing.addCard}
@@ -233,7 +243,7 @@ export function Billing() {
                     <td>{formatDate(payment.date, locale)}</td>
                     <td>{payment.id}</td>
                     <td>
-                      {t.plans[payment.plan].name} · {t.billing[payment.billing]}
+                      {planName(payment.plan, t)} · {billingName(payment.billing, t)}
                     </td>
                     <td>
                       <b>{formatAmount(payment.amount, locale)}</b>

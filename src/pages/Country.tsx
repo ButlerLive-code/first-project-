@@ -3,7 +3,7 @@ import { LocalLink } from '../i18n/LocalLink'
 import { useConnectHref } from '../auth/useConnectHref'
 import { LoadBar } from '../components/LoadBar'
 import { PageHeader } from '../components/PageHeader'
-import { countries, getCountry, placeName } from '../data/servers'
+import { countries, getCountry, placeName, type Country as CountryData } from '../data/servers'
 import { useLocale } from '../i18n/useLocale'
 import { usePageMeta } from '../i18n/usePageMeta'
 import { useT } from '../i18n/useT'
@@ -11,13 +11,18 @@ import { NotFound } from './NotFound'
 
 export function Country() {
   const { slug } = useParams()
-  const connectHref = useConnectHref()
   const country = getCountry(slug)
+  if (!country) return <NotFound />
+  return <CountryPage country={country} />
+}
+
+// Split out so the page meta hook only runs for a country that exists.
+function CountryPage({ country }: { country: CountryData }) {
+  const connectHref = useConnectHref()
   const t = useT()
   const locale = useLocale()
-  const countryName = country ? placeName(country.name, locale) : undefined
-  usePageMeta(countryName && t.country.metaTitle(countryName))
-  if (!country || !countryName) return <NotFound />
+  const countryName = placeName(country.name, locale)
+  usePageMeta(t.country.metaTitle(countryName))
 
   const nearby = countries
     .filter((c) => c.region === country.region && c.slug !== country.slug)

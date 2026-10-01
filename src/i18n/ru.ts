@@ -126,7 +126,7 @@ export const ru: Dictionary = {
   testimonials: {
     title: 'Нам доверяют тысячи довольных клиентов',
     text: 'Истории наших клиентов, которые с удовольствием пользуются этой невероятной функцией.',
-    stars: 'звёзд',
+    stars: (rating: number) => plural('ru', rating, { one: 'звезда', few: 'звезды', many: 'звёзд', other: 'звезды' }),
     showReview: (n: number) => `Показать отзыв ${n}`,
     previous: 'Назад',
     next: 'Вперёд',
@@ -246,8 +246,8 @@ export const ru: Dictionary = {
     memberSince: 'С нами с',
     manageBilling: 'Управление оплатой',
     noActivePlan: 'Нет активного тарифа.',
-    devicesInUse: (used: number, limit: number) =>
-      `Используется ${used} из ${limit} ${plural('ru', limit, { one: 'устройства', other: 'устройств' })}`,
+    devicesInUse: (limit: number): [string, string, string] =>
+      ['Используется ', ' из ', ` ${plural('ru', limit, { one: 'устройства', other: 'устройств' })}`],
     manageDevices: 'Управление устройствами',
     getMost: 'Получите максимум от LaslesVPN',
     quickLinks: [
@@ -477,6 +477,7 @@ export const ru: Dictionary = {
     signUpAfter: ', чтобы войти.',
     recommended: 'Рекомендуем для вас',
     version: (version: string) => `Версия ${version}`,
+    size: (mb: number) => `${mb} МБ`,
     download: 'Скачать',
     setupGuide: 'Инструкция по установке →',
     needAccount: 'Чтобы войти в приложение, нужен аккаунт LaslesVPN. Начать можно бесплатно.',

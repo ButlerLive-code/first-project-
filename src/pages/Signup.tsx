@@ -4,7 +4,7 @@ import { LocalLink } from '../i18n/LocalLink'
 import { useLocalNavigate } from '../i18n/useLocalNavigate'
 import { safeNext } from '../auth/next'
 import { useAuth } from '../auth/useAuth'
-import { useT } from '../i18n/useT'
+import { message, useT, type Message } from '../i18n/useT'
 import { usePageMeta } from '../i18n/usePageMeta'
 
 export function Signup() {
@@ -14,7 +14,7 @@ export function Signup() {
   const navigate = useLocalNavigate()
   const [params] = useSearchParams()
   const next = safeNext(params.get('next'), '/checkout')
-  const [error, setError] = useState('')
+  const [error, setError] = useState<Message>(null)
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -23,7 +23,7 @@ export function Signup() {
     const email = String(form.get('email')).trim()
     const password = String(form.get('password'))
     if (password.length < 6) {
-      setError(t.auth.passwordTooShort)
+      setError(message((t) => t.auth.passwordTooShort))
       return
     }
     signUp(name, email)
@@ -53,10 +53,10 @@ export function Signup() {
               required
               autoComplete="new-password"
               placeholder={t.signup.passwordPlaceholder}
-              onChange={() => setError('')}
+              onChange={() => setError(null)}
             />
           </label>
-          {error && <p className="form-error">{error}</p>}
+          {error && <p className="form-error">{error(t)}</p>}
           <label className="checkbox">
             <input type="checkbox" required />
             <span>

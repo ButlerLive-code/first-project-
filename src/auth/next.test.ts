@@ -9,6 +9,12 @@ it.each([
   ['/ru/checkout', '/ru/checkout'],
   ['//evil.com', '/dashboard'],
   ['/\\evil.com', '/dashboard'],
+  ['/\t/evil.com', '/dashboard'],
+  ['/\n/evil.com', '/dashboard'],
+  ['/\r\n/evil.com', '/dashboard'],
+  // Already decoded by params.get, so this is literal text and a harmless path.
+  ['/%09/evil.com', '/%09/evil.com'],
+  ['/a\\b', '/dashboard'],
   ['https://evil.com', '/dashboard'],
   ['javascript:alert(1)', '/dashboard'],
 ])('safeNext(%s) → %s', (next, expected) => {

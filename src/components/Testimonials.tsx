@@ -1,4 +1,6 @@
 import { useState, type CSSProperties } from 'react'
+import { formatDecimal } from '../i18n/format'
+import { useLocale } from '../i18n/useLocale'
 import { useT } from '../i18n/useT'
 import avatar1 from '../assets/avatar-1.png'
 import avatar2 from '../assets/avatar-2.png'
@@ -35,6 +37,7 @@ function Arrow() {
 
 export function Testimonials() {
   const t = useT()
+  const locale = useLocale()
   const [active, setActive] = useState(0)
   const last = testimonials.length - 1
 
@@ -60,8 +63,8 @@ export function Testimonials() {
                   <p className="testimonial-location">{t.testimonials.items[i].location}</p>
                 </div>
                 <p className="testimonial-rating">
-                  {item.rating}
-                  <svg width="16" height="16" viewBox="0 0 16 16" aria-label={t.testimonials.stars}>
+                  {formatDecimal(item.rating, locale)}
+                  <svg width="16" height="16" viewBox="0 0 16 16" aria-label={t.testimonials.stars(item.rating)}>
                     <path
                       fill="#FEA250"
                       d="m14.4 5.4-4.1-.6L8.5 1.1a.6.6 0 0 0-1 0L5.7 4.8l-4.1.6a.6.6 0 0 0-.3 1l3 2.9-.7 4a.6.6 0 0 0 .8.6L8 12l3.6 1.9a.6.6 0 0 0 .8-.6l-.7-4 3-2.9a.6.6 0 0 0-.3-1Z"

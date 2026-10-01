@@ -4,7 +4,7 @@ import { useLocalNavigate } from '../i18n/useLocalNavigate'
 import { newId } from '../auth/account'
 import type { Billing } from '../auth/context'
 import { useAuth } from '../auth/useAuth'
-import { useT } from '../i18n/useT'
+import { message, useT, type Message } from '../i18n/useT'
 import { useLocale } from '../i18n/useLocale'
 import { usePageMeta } from '../i18n/usePageMeta'
 import { formatPrice } from '../i18n/format'
@@ -24,7 +24,7 @@ export function Checkout() {
   const plan = getPlan(params.get('plan')) ?? getPlan(user?.plan) ?? plans[1]
   const [billing, setBilling] = useState<Billing>(user?.billing ?? 'monthly')
   const [card, setCard] = useState({ name: '', number: '', expiry: '', cvc: '' })
-  const [error, setError] = useState('')
+  const [error, setError] = useState<Message>(null)
   const [processing, setProcessing] = useState(false)
 
   const isFree = plan.price === 0
@@ -34,7 +34,7 @@ export function Checkout() {
 
   function selectPlan(id: PlanId) {
     setParams({ plan: id }, { replace: true })
-    setError('')
+    setError(null)
   }
 
   function handleCard(e: ChangeEvent<HTMLInputElement>) {
@@ -48,15 +48,15 @@ export function Checkout() {
             ? value.replace(/\D/g, '').slice(0, 4)
             : value
     setCard((prev) => ({ ...prev, [name]: formatted }))
-    setError('')
+    setError(null)
   }
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (!isFree) {
-      if (card.number.replace(/\s/g, '').length !== 16) return setError(t.checkout.errors.cardNumber)
-      if (!isExpiryValid(card.expiry)) return setError(t.checkout.errors.expiry)
-      if (card.cvc.length < 3) return setError(t.checkout.errors.cvc)
+      if (card.number.replace(/\s/g, '').length !== 16) return setError(message((t) => t.checkout.errors.cardNumber))
+      if (!isExpiryValid(card.expiry)) return setError(message((t) => t.checkout.errors.expiry))
+      if (card.cvc.length < 3) return setError(message((t) => t.checkout.errors.cvc))
     }
     setProcessing(true)
     // Simulated payment round-trip. Card details never leave this component.
@@ -209,7 +209,7 @@ export function Checkout() {
             <span>{t.checkout.totalToday}</span>
             <span>{formatPrice(total, locale)}</span>
           </p>
-          {error && <p className="form-error">{error}</p>}
+          {error && <p className="form-error">{error(t)}</p>}
           <button type="submit" className="btn btn-primary form-submit" disabled={processing || isCurrent}>
             {processing
               ? t.checkout.processing

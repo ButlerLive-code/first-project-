@@ -15,7 +15,7 @@ export interface PlatformMeta {
   name: string
   icon: string
   version: string
-  size: string
+  sizeMb: number
   file: string
 }
 
@@ -23,11 +23,11 @@ export interface Platform extends PlatformMeta, PlatformText {}
 
 // Names, versions and file names stay in English in every language.
 const platformMeta: PlatformMeta[] = [
-  { id: 'windows', name: 'Windows', icon: '🪟', version: '4.2.1', size: '48 MB', file: 'LaslesVPN-Setup-4.2.1.exe' },
-  { id: 'macos', name: 'macOS', icon: '🍎', version: '4.2.0', size: '41 MB', file: 'LaslesVPN-4.2.0.dmg' },
-  { id: 'ios', name: 'iOS', icon: '📱', version: '4.1.8', size: '36 MB', file: 'App Store' },
-  { id: 'android', name: 'Android', icon: '🤖', version: '4.1.9', size: '29 MB', file: 'Google Play' },
-  { id: 'linux', name: 'Linux', icon: '🐧', version: '4.0.3', size: '22 MB', file: 'laslesvpn_4.0.3_amd64.deb' },
+  { id: 'windows', name: 'Windows', icon: '🪟', version: '4.2.1', sizeMb: 48, file: 'LaslesVPN-Setup-4.2.1.exe' },
+  { id: 'macos', name: 'macOS', icon: '🍎', version: '4.2.0', sizeMb: 41, file: 'LaslesVPN-4.2.0.dmg' },
+  { id: 'ios', name: 'iOS', icon: '📱', version: '4.1.8', sizeMb: 36, file: 'App Store' },
+  { id: 'android', name: 'Android', icon: '🤖', version: '4.1.9', sizeMb: 29, file: 'Google Play' },
+  { id: 'linux', name: 'Linux', icon: '🐧', version: '4.0.3', sizeMb: 22, file: 'laslesvpn_4.0.3_amd64.deb' },
 ]
 
 const texts: Record<Locale, Record<PlatformId, PlatformText>> = { en: enText, ru: ruText }

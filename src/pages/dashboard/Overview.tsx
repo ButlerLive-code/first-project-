@@ -41,6 +41,9 @@ export function Overview() {
   const [connectedAt, setConnectedAt] = useState<number | null>(null)
   const [now, setNow] = useState(() => Date.now())
 
+  const limit = plan?.devices ?? 1
+  const [before, between, after] = t.overview.devicesInUse(limit)
+
   const server = servers.find((s) => s.id === serverId) ?? servers[0]
   const locked = server.premium && plan?.id !== 'premium'
   const welcome = params.get('welcome') === '1'
@@ -179,7 +182,13 @@ export function Overview() {
 
         <div className="card">
           <h2 className="card-title">{t.dashboard.tabs.devices}</h2>
-          <p>{t.overview.devicesInUse(devices.length, plan?.devices ?? 1)}</p>
+          <p>
+            {before}
+            <b>{devices.length}</b>
+            {between}
+            <b>{limit}</b>
+            {after}
+          </p>
           <ul className="stat-list">
             {devices.slice(0, 3).map((device) => (
               <li key={device.id}>

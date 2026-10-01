@@ -18,6 +18,11 @@ export function formatNumber(n: number, locale: Locale) {
   return n.toLocaleString(locale, { maximumFractionDigits: 0 })
 }
 
+// One decimal at most, with the language's separator: 4.5 / 4,5.
+export function formatDecimal(n: number, locale: Locale) {
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(n)
+}
+
 // Prices stay in US dollars; only the notation follows the language.
 export function formatPrice(amount: number, locale: Locale) {
   return new Intl.NumberFormat(locale, {
