@@ -7,6 +7,6 @@ process.env.TZ = 'America/Los_Angeles'
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts', 'scripts/**/*.test.mjs'],
+    include: ['src/**/*.test.ts', 'scripts/**/*.test.mjs', 'shared/**/*.test.ts'],
   },
 })

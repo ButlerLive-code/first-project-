@@ -9,7 +9,7 @@ import { useLocale } from '../i18n/useLocale'
 import { usePageMeta } from '../i18n/usePageMeta'
 import { formatPrice } from '../i18n/format'
 import { getPlan, plans, type PlanId } from '../data/plans'
-import { cardBrand, formatCardNumber, formatExpiry, isExpiryValid } from '../utils/card'
+import { cardBrand, formatCardNumber, formatExpiry, isExpiryValid } from '../../shared/card'
 
 // Yearly billing: pay for 10 months, get 12.
 const YEARLY_MONTHS = 10

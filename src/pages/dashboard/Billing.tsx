@@ -10,7 +10,7 @@ import { message, useT, type Message } from '../../i18n/useT'
 import { getPlan } from '../../data/plans'
 import type { Dictionary } from '../../i18n/en'
 import type { Locale } from '../../i18n/locales'
-import { cardBrand, formatCardNumber, formatExpiry, isExpiryValid } from '../../utils/card'
+import { cardBrand, formatCardNumber, formatExpiry, isExpiryValid } from '../../../shared/card'
 
 // cardBrand() stores 'Card' for unknown brands; show it in the page language.
 function brandLabel(brand: string, t: Dictionary) {

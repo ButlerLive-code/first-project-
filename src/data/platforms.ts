@@ -1,8 +1,10 @@
+import type { PlatformId } from '../../shared/api'
 import type { Locale } from '../i18n/locales'
 import { platformText as enText } from './platforms.en'
 import { platformText as ruText } from './platforms.ru'
 
-export type PlatformId = 'windows' | 'macos' | 'ios' | 'android' | 'linux'
+// The ids are shared with the API server, which validates device platforms.
+export type { PlatformId }
 
 export interface PlatformText {
   requirements: string
