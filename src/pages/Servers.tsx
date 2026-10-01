@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { LocalLink } from '../i18n/LocalLink'
+import { useMe } from '../api/useApi'
 import { useAuth } from '../auth/useAuth'
 import { useConnectHref } from '../auth/useConnectHref'
 import { LoadBar } from '../components/LoadBar'
@@ -16,6 +17,7 @@ export function Servers() {
   const locale = useLocale()
   usePageMeta(t.servers.metaTitle)
   const { user } = useAuth()
+  const { data: me } = useMe()
   const connectHref = useConnectHref()
   const [query, setQuery] = useState('')
   const [region, setRegion] = useState<Region | 'all'>('all')
@@ -31,7 +33,7 @@ export function Servers() {
     )
     .sort((a, b) => (sort === 'country' ? placeName(a.country, locale).localeCompare(placeName(b.country, locale), locale) : a[sort] - b[sort]))
 
-  const canUse = (premium: boolean) => !premium || user?.plan === 'premium'
+  const canUse = (premium: boolean) => !premium || me?.subscription?.plan === 'premium'
 
   return (
     <>

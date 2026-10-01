@@ -1,12 +1,9 @@
 import { startTransition, useState, type FormEvent } from 'react'
 import { useLocalNavigate } from '../../i18n/useLocalNavigate'
-import { getPreferences } from '../../auth/account'
-import type { Preferences } from '../../auth/context'
 import { useAuth } from '../../auth/useAuth'
 import { usePageMeta } from '../../i18n/usePageMeta'
 import { message, useT, type Message } from '../../i18n/useT'
-
-const toggleKeys: (keyof Preferences)[] = ['autoConnect', 'killSwitch', 'newsletter']
+import { PreferencesCard } from './settings/PreferencesCard'
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -22,8 +19,6 @@ export function Settings() {
   const [deleteText, setDeleteText] = useState('')
 
   if (!user) return null
-
-  const preferences = getPreferences(user)
 
   function handleProfile(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -47,10 +42,6 @@ export function Settings() {
     // Demo: passwords are never stored, so there is nothing to compare or save.
     form.reset()
     setPasswordSaved(true)
-  }
-
-  function toggle(key: keyof Preferences) {
-    updateUser({ preferences: { ...preferences, [key]: !preferences[key] } })
   }
 
   function handleDelete(e: FormEvent) {
@@ -117,29 +108,7 @@ export function Settings() {
         </form>
       </div>
 
-      <div className="card account-card">
-        <h2 className="card-title">{t.settings.preferences}</h2>
-        <p className="device-meta">{t.settings.synced}</p>
-        <ul className="switch-list">
-          {toggleKeys.map((key) => (
-            <li key={key}>
-              <label className="switch">
-                <span>
-                  <b>{t.settings.toggles[key].title}</b>
-                  <span>{t.settings.toggles[key].text}</span>
-                </span>
-                <input
-                  type="checkbox"
-                  role="switch"
-                  checked={preferences[key]}
-                  onChange={() => toggle(key)}
-                />
-                <span className="switch-track" aria-hidden="true" />
-              </label>
-            </li>
-          ))}
-        </ul>
-      </div>
+      <PreferencesCard />
 
       <div className="card account-card danger-zone">
         <h2 className="card-title">{t.settings.deleteTitle}</h2>
