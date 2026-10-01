@@ -1,41 +1,71 @@
 import { expect, it } from 'vitest'
 import { scanSource } from './i18n-scan.mjs'
 
+const texts = (code) => scanSource(code).map((f) => f.text)
+
 it('finds visible English text', () => {
   const code = [
-    '<h1 className="x">Welcome back</h1>',
-    '<input placeholder="you@example.com" />',
-    '<button aria-label="Menu">',
-    "  { label: 'About', to: '/#about' },",
-    '<p>{t.auth.title}</p>',
-    '<span>LaslesVPN</span> // i18n-ignore',
+    'function X() {',
+    '  return (',
+    '    <>',
+    '      <h1 className="x">Welcome back</h1>',
+    '      <input placeholder="you@example.com" />',
+    '      <button aria-label="Menu" />',
+    '      <p>{t.auth.title}</p>',
+    '      <span>LaslesVPN</span> {/* i18n-ignore */}',
+    '      <p>{count} · {total}</p>',
+    '    </>',
+    '  )',
+    '}',
     'const ok = a > b && c < d',
-    '<p>{count} · {total}</p>',
+    'const links = [',
+    "  { label: 'About', to: '/#about' },",
+    "  { label: 'Brand', to: '/' }, // i18n-ignore",
+    ']',
   ].join('\n')
-  expect(scanSource(code).map((f) => f.text)).toEqual(['Welcome back', 'you@example.com', 'Menu', 'About'])
+  expect(texts(code)).toEqual(['Welcome back', 'you@example.com', 'Menu', 'About'])
 })
 
 it('finds text on its own line between tags', () => {
-  const code = '<button>\n  Sign In\n</button>'
-  const result = scanSource(code)
-  expect(result.map((f) => f.text)).toEqual(['Sign In'])
-  expect(result[0].line).toBe(2)
+  const result = scanSource('<button>\n  Sign In\n</button>')
+  expect(result).toEqual([{ line: 2, text: 'Sign In' }])
 })
 
 it('finds text next to template expressions', () => {
-  const code = '<h1>Hi, {name}!</h1>'
-  const result = scanSource(code)
-  expect(result.map((f) => f.text)).toEqual(['Hi,'])
+  expect(texts('<h1>Hi, {name}!</h1>')).toEqual(['Hi,'])
 })
 
-it('preserves text with ampersands and parentheses', () => {
-  const code = '<p>Terms & Conditions</p>'
-  const result = scanSource(code)
-  expect(result.map((f) => f.text)).toEqual(['Terms & Conditions'])
+it('preserves text with ampersands', () => {
+  expect(texts('<p>Terms & Conditions</p>')).toEqual(['Terms & Conditions'])
 })
 
-it('skips code patterns and generics', () => {
-  const code = 'const x = useState<Billing>(user?.billing ?? \'monthly\')'
-  const result = scanSource(code)
-  expect(result).toEqual([])
+it('skips code and generics', () => {
+  expect(scanSource("const x = useState<Billing>(user?.billing ?? 'monthly')")).toEqual([])
+})
+
+it('finds text after an element whose attributes contain arrow functions', () => {
+  expect(scanSource('<a onClick={() => setX(true)}>\n  Forgot password?\n</a>')).toEqual([
+    { line: 2, text: 'Forgot password?' },
+  ])
+})
+
+it('finds text after attributes with template literals', () => {
+  expect(texts('<Link to={`/x?y=${encodeURIComponent(n)}`}>Create an account</Link>')).toEqual(['Create an account'])
+})
+
+it('keeps prose containing code-like words and symbols', () => {
+  const t = 'Choose a plan from the list; export your data = easy'
+  expect(texts(`<p>${t}</p>`)).toEqual([t])
+})
+
+it('reports user-facing attributes only', () => {
+  expect(texts('<input placeholder={\'Search\'} aria-label="Find" className="search-box" />')).toEqual(['Search', 'Find'])
+})
+
+it('reports string literals in JSX expressions', () => {
+  expect(texts("<p>{'Hello'}</p>")).toEqual(['Hello'])
+})
+
+it('honours i18n-ignore in JSX comments on the same line', () => {
+  expect(texts('<p>Hello</p> {/* i18n-ignore */}')).toEqual([])
 })

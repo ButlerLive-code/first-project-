@@ -1,64 +1,63 @@
-// Heuristic check for UI text that bypasses the dictionaries: JSX text,
+// Check (via the TypeScript AST) for UI text that bypasses the dictionaries: JSX text,
 // user-facing attributes and `label:`-style literals in .tsx files.
 // Add `i18n-ignore` to a line for intentional English (brand, OS names).
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import ts from 'typescript'
 
-// JSX text pattern: matches text between > (or }) and < (or {), allowing newlines
-// Capturing group includes leading whitespace so we can compute line numbers correctly
-const jsxTextPattern = /[>}](\s*[^<{]*?[A-Za-z][^<{]*?)\s*[<{]/gs
-// Attribute patterns (per-line)
-const attributePatterns = [
-  /\b(?:placeholder|aria-label|alt|title)="([^"]*[A-Za-z][^"]*)"/g,
-  /\b(?:label|title|text|description|placeholder|q|a):\s*'([^']*[A-Za-z][^']*)'/g,
-]
-// Code patterns to skip JSX text
-const codePatterns = [/=>/, /&&/, /\|\|/, /===/, /!==/, / = /, /;/, /\bimport\b/, /\bexport\b/, /\bfrom\b/, /\brequire\b/, /\bconst\b/, /\blet\b/, /\bvar\b/, /\bfunction\b/, /`/, /\$\{/, /\)\s*[}>\]]/, /\w+\(/, /\w+=\s*(["{[]|$)/]
-// Operators that text shouldn't start with (check after trim)
-const startOpChars = /^[=&|?:)(,.>]/
+const ATTRS = new Set(['placeholder', 'aria-label', 'alt', 'title'])
+const PROPS = new Set(['label', 'title', 'text', 'description', 'placeholder', 'q', 'a'])
+
+const isStringLike = (n) => n && (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n))
 
 export function scanSource(code) {
-  const findings = []
+  const sf = ts.createSourceFile('x.tsx', code, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
   const lines = code.split('\n')
+  const findings = []
 
-  // Scan for multi-line JSX text
-  for (const match of code.matchAll(jsxTextPattern)) {
-    const rawText = match[1]
-    const trimmedRawText = rawText.trim()
-    // Skip if it looks like code
-    if (codePatterns.some(p => p.test(rawText)) || startOpChars.test(trimmedRawText)) continue
-
-    // Compute line number where the text starts
-    // Count newlines before the match, then newlines before first letter in captured text
-    const beforeMatch = code.substring(0, match.index)
-    const lineOfOpenTag = beforeMatch.split('\n').length
-    // Count newlines in the captured text before the first letter
-    const beforeFirstLetter = rawText.substring(0, rawText.search(/[A-Za-z]/))
-    const newlinesBeforeFirstLetter = (beforeFirstLetter.match(/\n/g) || []).length
-    const startLine = lineOfOpenTag + newlinesBeforeFirstLetter
-
-    // Check if i18n-ignore is on the starting line
-    if (lines[startLine - 1] && lines[startLine - 1].includes('i18n-ignore')) continue
-
-    // Normalize text: collapse internal whitespace, trim
-    const text = rawText.replace(/\s+/g, ' ').trim()
-    if (text) findings.push({ line: startLine, text })
+  const report = (node, raw) => {
+    if (!/[A-Za-z]/.test(raw)) return
+    const start = ts.isJsxText(node) ? node.pos + (raw.length - raw.trimStart().length) : node.getStart(sf)
+    const line = sf.getLineAndCharacterOfPosition(start).line + 1
+    if ((lines[line - 1] ?? '').includes('i18n-ignore')) return
+    findings.push({ line, pos: start, text: raw.replace(/\s+/g, ' ').trim() })
   }
 
-  // Scan for attributes and labels (per-line, as before)
-  lines.forEach((line, i) => {
-    if (line.includes('i18n-ignore')) return
-    for (const pattern of attributePatterns) {
-      for (const match of line.matchAll(pattern)) {
-        const text = match[1].trim()
-        // Filter: skip if only operators (&, (, ) are present, or empty
-        if (text && !(/^[&()]*$/.test(text))) findings.push({ line: i + 1, text })
+  const visit = (node) => {
+    if (ts.isJsxText(node)) {
+      report(node, node.text)
+    } else if (isStringLike(node)) {
+      const parent = node.parent
+      if (ts.isJsxAttribute(parent) && ATTRS.has(parent.name.getText(sf))) {
+        report(node, node.text)
+      } else if (
+        ts.isJsxExpression(parent) &&
+        ts.isJsxAttribute(parent.parent) &&
+        ATTRS.has(parent.parent.name.getText(sf))
+      ) {
+        report(node, node.text)
+      } else if (
+        ts.isJsxExpression(parent) &&
+        (ts.isJsxElement(parent.parent) || ts.isJsxFragment(parent.parent))
+      ) {
+        report(node, node.text)
+      } else if (
+        ts.isPropertyAssignment(parent) &&
+        parent.initializer === node &&
+        (ts.isIdentifier(parent.name) || ts.isStringLiteral(parent.name)) &&
+        PROPS.has(parent.name.text)
+      ) {
+        report(node, node.text)
       }
     }
-  })
+    ts.forEachChild(node, visit)
+  }
+  visit(sf)
 
   return findings
+    .sort((x, y) => x.line - y.line || x.pos - y.pos)
+    .map(({ line, text }) => ({ line, text }))
 }
 
 function walk(dir) {
