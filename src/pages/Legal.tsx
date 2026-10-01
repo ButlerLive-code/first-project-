@@ -1,13 +1,15 @@
 import { LocalLink } from '../i18n/LocalLink'
 import { PageHeader } from '../components/PageHeader'
-import { formatDate } from '../data/blog'
+import { formatDate } from '../i18n/format'
+import { useLocale } from '../i18n/useLocale'
 import type { LegalDoc } from '../data/legal'
 
 export function Legal({ doc }: { doc: LegalDoc }) {
+  const locale = useLocale()
   return (
     <>
       <PageHeader eyebrow="Legal" title={doc.title}>
-        Last updated {formatDate(doc.updated)}
+        Last updated {formatDate(doc.updated, locale)}
       </PageHeader>
 
       <section className="container page-section legal">

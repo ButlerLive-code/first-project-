@@ -1,14 +1,21 @@
 import { useParams } from 'react-router'
 import { LocalLink } from '../i18n/LocalLink'
-import { formatDate, getPost, posts } from '../data/blog'
+import { getPost, getPosts } from '../data/blog'
+import { formatDate } from '../i18n/format'
+import { useLocale } from '../i18n/useLocale'
+import { usePageMeta } from '../i18n/usePageMeta'
+import { useT } from '../i18n/useT'
 import { NotFound } from './NotFound'
 
 export function BlogPost() {
+  const t = useT()
+  const locale = useLocale()
   const { slug } = useParams()
-  const post = getPost(slug)
+  const post = getPost(slug, locale)
+  usePageMeta(post?.title, post?.excerpt)
   if (!post) return <NotFound />
 
-  const related = posts
+  const related = getPosts(locale)
     .filter((p) => p.slug !== post.slug)
     .sort((a, b) => Number(b.category === post.category) - Number(a.category === post.category))
     .slice(0, 3)
@@ -17,11 +24,11 @@ export function BlogPost() {
     <>
       <article className="container article">
         <LocalLink to="/blog" className="back-link">
-          ← All articles
+          {t.blogPost.back}
         </LocalLink>
         <p className="post-meta">
-          <span className="badge">{post.category}</span> {formatDate(post.date)} · {post.readMinutes}{' '}
-          min read
+          <span className="badge">{t.blog.categories[post.category]}</span>{' '}
+          {formatDate(post.date, locale)} · {t.blog.readTime(post.readMinutes)}
         </p>
         <h1 className="page-title article-title">{post.title}</h1>
         <p className="article-lead">{post.excerpt}</p>
@@ -35,15 +42,15 @@ export function BlogPost() {
         ))}
 
         <div className="notice page-cta">
-          <p>Ready to put this into practice? Start with the Free plan — no card required.</p>
+          <p>{t.blogPost.cta}</p>
           <LocalLink to="/#pricing" className="btn btn-primary">
-            Get LaslesVPN
+            {t.blogPost.ctaButton}
           </LocalLink>
         </div>
       </article>
 
       <section className="container page-section related">
-        <h2 className="subheading">Keep reading</h2>
+        <h2 className="subheading">{t.blogPost.keepReading}</h2>
         <ul className="post-grid">
           {related.map((p) => (
             <li key={p.slug}>
@@ -52,7 +59,8 @@ export function BlogPost() {
                   {p.emoji}
                 </span>
                 <span className="post-meta">
-                  <span className="badge">{p.category}</span> {p.readMinutes} min read
+                  <span className="badge">{t.blog.categories[p.category]}</span>{' '}
+                  {t.blog.readTime(p.readMinutes)}
                 </span>
                 <span className="post-title">{p.title}</span>
               </LocalLink>

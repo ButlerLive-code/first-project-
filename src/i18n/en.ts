@@ -542,6 +542,21 @@ export const en = {
     messagePlaceholder: "Tell us what's going on…",
     send: 'Send Message',
   },
+  blog: {
+    metaTitle: 'Blog',
+    eyebrow: 'Blog',
+    title: 'Stories, guides & product news',
+    text: 'Tips to stay private online, setup guides and the latest from the LaslesVPN team.',
+    categories: { all: 'All', privacy: 'Privacy', guides: 'Guides', product: 'Product', travel: 'Travel' },
+    readTime: (n: number) => `${n} ${plural('en', n, { one: 'min read', other: 'min read' })}`,
+    readArticle: 'Read article →',
+  },
+  blogPost: {
+    back: '← All articles',
+    cta: 'Ready to put this into practice? Start with the Free plan — no card required.',
+    ctaButton: 'Get LaslesVPN',
+    keepReading: 'Keep reading',
+  },
   notFound: {
     metaTitle: 'Page not found',
     title: 'Page not found',

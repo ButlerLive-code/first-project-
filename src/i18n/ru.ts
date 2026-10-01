@@ -549,6 +549,21 @@ export const ru: Dictionary = {
     messagePlaceholder: 'Расскажите, что случилось…',
     send: 'Отправить сообщение',
   },
+  blog: {
+    metaTitle: 'Блог',
+    eyebrow: 'Блог',
+    title: 'Истории, инструкции и новости продукта',
+    text: 'Советы, как сохранять приватность в сети, руководства по настройке и свежие новости команды LaslesVPN.',
+    categories: { all: 'Все', privacy: 'Приватность', guides: 'Инструкции', product: 'Продукт', travel: 'Путешествия' },
+    readTime: (n: number) => `${n} ${plural('ru', n, { one: 'мин чтения', few: 'мин чтения', many: 'мин чтения', other: 'мин чтения' })}`,
+    readArticle: 'Читать статью →',
+  },
+  blogPost: {
+    back: '← Все статьи',
+    cta: 'Готовы применить это на практике? Начните с бесплатного тарифа — карта не нужна.',
+    ctaButton: 'Получить LaslesVPN',
+    keepReading: 'Читайте также',
+  },
   notFound: {
     metaTitle: 'Страница не найдена',
     title: 'Страница не найдена',
