@@ -26,3 +26,8 @@ export function formatPrice(amount: number, locale: Locale) {
     minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
   }).format(amount)
 }
+
+// Exact amounts on invoices and in payment history keep their cents ($9.00).
+export function formatAmount(amount: number, locale: Locale) {
+  return new Intl.NumberFormat(locale, { style: 'currency', currency: 'USD' }).format(amount)
+}

@@ -1,4 +1,5 @@
 import type { Dictionary } from './en'
+import { plural } from './plural'
 
 export const ru: Dictionary = {
   meta: {
@@ -13,6 +14,11 @@ export const ru: Dictionary = {
   },
   common: {
     sendAnother: 'Отправить ещё',
+    dismiss: 'Закрыть',
+    upgrade: 'Улучшить тариф',
+    choosePlan: 'Выбрать тариф',
+    thisDevice: 'Это устройство',
+    pricePerMonth: (price: string) => `${price} / мес`,
   },
   header: {
     menu: 'Меню',
@@ -206,6 +212,175 @@ export const ru: Dictionary = {
       expiry: 'Введите корректный срок действия карты (ММ/ГГ).',
       cvc: 'Введите CVC из 3–4 цифр.',
     },
+  },
+  dashboard: {
+    eyebrow: 'Личный кабинет',
+    greeting: (name: string) => `Здравствуйте, ${name}!`,
+    signOut: 'Выйти',
+    navLabel: 'Разделы личного кабинета',
+    tabs: {
+      overview: 'Обзор',
+      devices: 'Устройства',
+      billing: 'Оплата',
+      settings: 'Настройки',
+    },
+  },
+  overview: {
+    metaTitle: 'Обзор',
+    welcomeBefore: '🎉 Всё готово! Тариф ',
+    welcomeAfter: ' теперь активен.',
+    noPlan: 'У вас пока нет активного тарифа. Выберите его, чтобы безопасно пользоваться интернетом.',
+    connection: 'Подключение',
+    connect: 'Подключиться',
+    disconnect: 'Отключиться',
+    protected: 'Защита включена',
+    yourIp: 'Ваш IP:',
+    notProtected: 'Защита выключена',
+    serverLocation: 'Локация сервера',
+    ms: 'мс',
+    premium: 'Премиум',
+    lockedBefore: 'Эта локация доступна на тарифе Премиум. ',
+    yourPlan: 'Ваш тариф',
+    locations: 'Локации',
+    renewsOn: 'Продление',
+    memberSince: 'С нами с',
+    manageBilling: 'Управление оплатой',
+    noActivePlan: 'Нет активного тарифа.',
+    devicesInUse: (used: number, limit: number) =>
+      `Используется ${used} из ${limit} ${plural('ru', limit, { one: 'устройства', other: 'устройств' })}`,
+    manageDevices: 'Управление устройствами',
+    getMost: 'Получите максимум от LaslesVPN',
+    quickLinks: [
+      { title: 'Скачать приложения', text: 'LaslesVPN для всех ваших устройств.' },
+      { title: 'Инструкции по настройке', text: 'Пошаговая помощь для каждой платформы.' },
+      { title: 'FAQ', text: 'Ответы на самые частые вопросы.' },
+      { title: 'Связаться с поддержкой', text: 'Мы на связи 24/7, если что-то не получается.' },
+    ],
+  },
+  devices: {
+    metaTitle: 'Устройства',
+    count: (n: number) =>
+      `${n} ${plural('ru', n, { one: 'устройство', few: 'устройства', many: 'устройств', other: 'устройства' })}`,
+    title: 'Ваши устройства',
+    usageOnPlan: (used: number, limit: number, planName: string) =>
+      `Используется ${used} из ${limit} на тарифе «${planName}».`,
+    usageFree: (used: number, limit: number) => `Используется ${used} из ${limit} на бесплатном аккаунте.`,
+    usageLabel: (used: number, limit: number) => `Используется устройств: ${used} из ${limit}`,
+    overLimit: (limit: number, extra: number) =>
+      `Ваш тариф позволяет подключить ${limit} ${plural('ru', limit, { one: 'устройство', few: 'устройства', many: 'устройств', other: 'устройства' })}. Удалите лишние (${extra}) или улучшите тариф, чтобы все устройства оставались подключёнными.`,
+    signedInNow: 'Вход выполнен сейчас',
+    remove: 'Удалить',
+    meta: (platform: string, date: string) => `${platform} · добавлено ${date}`,
+    addTitle: 'Добавить устройство',
+    fullBefore: 'Все места для устройств на вашем тарифе заняты. Удалите одно из устройств выше',
+    fullOr: ' или ',
+    fullUpgrade: 'улучшите тариф',
+    fullAfter: ', чтобы добавить другое.',
+    deviceName: 'Название устройства',
+    namePlaceholder: 'например, рабочий ноутбук',
+    platform: 'Платформа',
+    addDevice: 'Добавить устройство',
+    defaultName: (platform?: string) => (platform ? `Моё устройство (${platform})` : 'Моё устройство'),
+    addedAfter: ' добавлено. Теперь установите приложение: ',
+    setupGuide: (platform: string) => `инструкция для ${platform}`,
+  },
+  billing: {
+    metaTitle: 'Оплата',
+    monthly: 'Помесячно',
+    yearly: 'Годовая оплата',
+    subscription: 'Подписка',
+    billedMonthlyLine: (price: string) => `${price} / мес · оплата помесячно`,
+    billedYearlyLine: (price: string) => `${price} / мес · оплата за год`,
+    renewsOnBefore: 'Следующее списание: ',
+    upgradePremium: 'Перейти на Премиум',
+    changePlan: 'Сменить тариф',
+    cancelConfirm: (planName: string) =>
+      `Отменить тариф «${planName}»? Вы сразу перейдёте на бесплатный тариф.`,
+    yesCancel: 'Да, отменить',
+    keepPlan: 'Оставить тариф',
+    cancelSubscription: 'Отменить подписку',
+    cancelled: (planName: string) => `Тариф «${planName}» отменён. Теперь у вас бесплатный тариф.`,
+    noPlanYet: 'У вас пока нет тарифа.',
+    paymentMethod: 'Способ оплаты',
+    genericCard: 'Карта',
+    expires: (expiry: string) => `Действует до ${expiry}`,
+    noCard: 'Карта не привязана.',
+    saveCard: 'Сохранить карту',
+    cancel: 'Отмена',
+    updateCard: 'Изменить карту',
+    addCard: 'Добавить карту',
+    cardUpdated: 'Способ оплаты обновлён.',
+    history: 'История платежей',
+    date: 'Дата',
+    invoice: 'Счёт',
+    plan: 'Тариф',
+    amount: 'Сумма',
+    status: 'Статус',
+    download: 'Скачать',
+    paid: 'Оплачено',
+    noPayments: 'Платежей пока нет. Счета за платные тарифы появятся здесь.',
+    invoiceText: (f: {
+      id: string
+      date: string
+      billedTo: string
+      plan: string
+      period: string
+      amount: string
+      card: string
+    }) =>
+      [
+        'LaslesVPN — Счёт',
+        '',
+        `Счёт:        ${f.id}`,
+        `Дата:        ${f.date}`,
+        `Плательщик:  ${f.billedTo}`,
+        '',
+        `${f.plan} (${f.period})`,
+        `Оплачено:    ${f.amount}`,
+        `Карта:       ${f.card}`,
+        '',
+        'Демонстрационный счёт: реальный платёж не проводился.',
+      ].join('\n'),
+  },
+  settings: {
+    metaTitle: 'Настройки',
+    profile: 'Профиль',
+    enterName: 'Введите ваше имя.',
+    invalidEmail: 'Введите корректный адрес электронной почты.',
+    saved: 'Сохранено ✓',
+    saveChanges: 'Сохранить изменения',
+    password: 'Пароль',
+    currentPassword: 'Текущий пароль',
+    newPassword: 'Новый пароль',
+    confirm: 'Повторите',
+    enterCurrent: 'Введите текущий пароль.',
+    newTooShort: 'Новый пароль должен содержать не менее 6 символов.',
+    mismatch: 'Новые пароли не совпадают.',
+    passwordUpdated: 'Пароль обновлён. Используйте его при следующем входе.',
+    updatePassword: 'Обновить пароль',
+    preferences: 'Настройки приложения',
+    synced: 'Синхронизируются на всех устройствах, где выполнен вход в ваш аккаунт.',
+    toggles: {
+      autoConnect: {
+        title: 'Автоподключение',
+        text: 'Подключаться к самому быстрому серверу сразу после запуска приложения.',
+      },
+      killSwitch: {
+        title: 'Kill Switch',
+        text: 'Блокировать интернет-трафик, если VPN-соединение неожиданно прервётся.',
+      },
+      newsletter: {
+        title: 'Новости продукта',
+        text: 'Редкие письма о новых локациях, функциях и предложениях.',
+      },
+    },
+    deleteTitle: 'Удаление аккаунта',
+    deleteText:
+      'Это удалит ваш профиль, устройства и историю платежей из этого браузера и завершит сеанс. Отменить это действие нельзя.',
+    typeBefore: 'Введите ',
+    deleteWord: 'УДАЛИТЬ',
+    typeAfter: ', чтобы подтвердить',
+    deleteButton: 'Удалить мой аккаунт',
   },
   notFound: {
     metaTitle: 'Страница не найдена',
