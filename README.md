@@ -15,7 +15,7 @@ npm run dev            # site http://localhost:5173 + API on 127.0.0.1:3001
 ```
 
 `npm run dev` starts Vite and the API server with one command and stops both together. The site
-opens at `APP_URL` (default `http://localhost:5173`); Vite runs with `--strictPort`, so if that port
+is served at `APP_URL` (default `http://localhost:5173`); Vite runs with `--strictPort`, so if that port
 is taken it fails instead of moving to another one (set a different `APP_URL` in `.env`). Open the
 site exactly at `APP_URL` (`localhost`, not `127.0.0.1`): the API accepts changing requests only
 from that origin, and email links point there. The API listens only on `127.0.0.1` (default
@@ -34,9 +34,9 @@ project and refuses to run when `NODE_ENV=production`.
 The defaults come from `.env.example` and are meant for development. In production, seeding is
 skipped unless both passwords are set explicitly.
 
-Emails are not sent in development: they are stored in the database, printed in the API console
-and shown at [/dev/mail](http://localhost:5173/dev/mail) (Russian: `/ru/dev/mail`). In production
-the `SMTP_*` settings are used when set, and `/dev/mail` is off.
+If `SMTP_*` is set (in any environment), real mail is sent. Otherwise mail is not sent: it is
+stored in the database, printed in the API console and, in development, shown at
+[/dev/mail](http://localhost:5173/dev/mail) (Russian: `/ru/dev/mail`).
 
 Google sign-in appears only when both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set. In
 Google Cloud, add this authorized redirect URI: `{APP_URL}/api/auth/callback/google`
@@ -45,7 +45,8 @@ account whose email is already confirmed. If the account has two-step sign-in
 turned on, Google sign-in still asks for the code on `/login/2fa`. Google ID-token sign-in is
 disabled.
 
-Test cards: `4242 4242 4242 4242` succeeds and `4000 0000 0000 0002` is declined. Only the card's
+Test cards: only `4000 0000 0000 0002` is declined; any other 16-digit number with a valid
+expiry, CVC and name succeeds (for example `4242 4242 4242 4242`). Only the card's
 brand and last four digits are stored, and the server computes the amount.
 
 ```bash
@@ -87,6 +88,7 @@ endpoints under `/api/auth/*`. The site's own endpoints:
 | `GET /api/me` · `PATCH /api/me` | profile, subscription, preferences · name, language |
 | `GET/POST /api/me/devices` · `DELETE /api/me/devices/:id` | devices, limited by plan |
 | `GET /api/me/payments` | payment history |
+| `GET /api/me/sessions` | active sessions, the current one marked (no tokens or IPs) |
 | `PATCH /api/me/preferences` | auto-connect, kill switch, newsletter |
 | `POST /api/me/subscription/cancel` | cancel at the end of the paid period |
 | `POST /api/checkout` | test payment; the server computes the amount |
@@ -131,6 +133,12 @@ Not set up yet; this is future work. The API reads its settings from the environ
 
 - `DATABASE_URL` (external Postgres) is not wired up yet: the server fails at start if it is set.
   Only the local PGlite database works for now.
+- SMTP is required in production. Without `SMTP_*`, mail is not delivered at all: every message,
+  including live password-reset and confirmation links, is stored in the `dev_mail` table and
+  printed in the server log, while `/dev/mail` is turned off.
+- Do not copy `.env.example` to production unchanged: it sets the seed passwords explicitly, so
+  the seed would create `admin@laslesvpn.test` with the public password `admin-password`. Set your
+  own values, or remove both `SEED_*` variables to skip seeding.
 - `NODE_ENV=production` needs `BETTER_AUTH_SECRET` (at least 32 characters), serves cookies as
   `Secure` (so the site must be on HTTPS), and turns off `/dev/mail`.
 - Behind a reverse proxy, the rate limit keys on `X-Forwarded-For`, so the proxy must overwrite that
