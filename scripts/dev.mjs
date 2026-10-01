@@ -25,7 +25,13 @@ const children = processes.map(([name, command, args]) => {
   })
   child.on('exit', (code) => {
     if (!stopping) console.log(`[dev] ${name} stopped (exit code ${code ?? 0}); stopping the other one`)
-    stopAll(code ?? 0)
+    // No exit code means a signal we did not send (OOM, SIGKILL): that is a failure.
+    stopAll(code ?? (stopping ? 0 : 1))
+  })
+  // spawn failures (e.g. ENOENT) emit 'error' instead of 'exit'.
+  child.on('error', (err) => {
+    console.error(`[dev] could not start ${name}: ${err.message}`)
+    stopAll(1)
   })
   return child
 })
