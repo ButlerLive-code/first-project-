@@ -32,7 +32,7 @@ project and refuses to run when `NODE_ENV=production`.
 | `demo@laslesvpn.test` | `SEED_DEMO_PASSWORD` (`demo-password`) | Standard plan, 2 devices, 3 payments |
 
 The defaults come from `.env.example` and are meant for development. In production, seeding is
-skipped unless both passwords are set explicitly.
+skipped unless both passwords are set explicitly, and the example passwords are refused.
 
 If `SMTP_*` is set (in any environment), real mail is sent. Otherwise mail is not sent: it is
 stored in the database, printed in the API console and, in development, shown at
@@ -137,10 +137,11 @@ Not set up yet; this is future work. The API reads its settings from the environ
 - SMTP is required in production. Without `SMTP_*`, mail is not delivered at all: every message,
   including live password-reset and confirmation links, is stored in the `dev_mail` table and
   printed in the server log, while `/dev/mail` is turned off.
-- Do not copy `.env.example` to production unchanged: it sets the seed passwords explicitly, so
-  the seed would create `admin@laslesvpn.test` with the public password `admin-password`. Set your
-  own values, or remove both `SEED_*` variables to skip seeding.
-- `NODE_ENV=production` needs `BETTER_AUTH_SECRET` (at least 32 characters), serves cookies as
+- Do not copy `.env.example` to production unchanged: the server refuses to start in production
+  while either `SEED_*` password is still the public example value (`admin-password`,
+  `demo-password`). Set your own values, or remove both `SEED_*` variables to skip seeding.
+- `NODE_ENV=production` needs `BETTER_AUTH_SECRET` (at least 32 characters, and not the
+  development fallback secret), serves cookies as
   `Secure` (so the site must be on HTTPS), and turns off `/dev/mail`.
 - Behind a reverse proxy, the rate limit keys on `X-Forwarded-For`, so the proxy must overwrite that
   header with the client address, for example in nginx

@@ -1,6 +1,9 @@
 import * as z from 'zod'
 
 const DEV_SECRET = 'dev-only-secret-change-me-dev-only-secret'
+// The seed passwords .env.example ships with. They are public, so production
+// refuses them outright rather than seed an admin anyone could sign in as.
+const EXAMPLE_SEED = { SEED_ADMIN_PASSWORD: 'admin-password', SEED_DEMO_PASSWORD: 'demo-password' } as const
 
 const envSchema = z.object({
   NODE_ENV: z.string().optional(),
@@ -16,8 +19,8 @@ const envSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASSWORD: z.string().optional(),
   SMTP_FROM: z.string().default('LaslesVPN <no-reply@laslesvpn.test>'),
-  SEED_ADMIN_PASSWORD: z.string().min(8).default('admin-password'),
-  SEED_DEMO_PASSWORD: z.string().min(8).default('demo-password'),
+  SEED_ADMIN_PASSWORD: z.string().min(8).default(EXAMPLE_SEED.SEED_ADMIN_PASSWORD),
+  SEED_DEMO_PASSWORD: z.string().min(8).default(EXAMPLE_SEED.SEED_DEMO_PASSWORD),
 })
 
 export interface Config {
@@ -41,6 +44,16 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   const e = envSchema.parse(Object.fromEntries(Object.entries(env).filter(([, value]) => value !== '')))
   const isProduction = e.NODE_ENV === 'production'
   if (isProduction && !e.BETTER_AUTH_SECRET) throw new Error('BETTER_AUTH_SECRET is required in production')
+  if (isProduction && e.BETTER_AUTH_SECRET === DEV_SECRET) {
+    throw new Error('BETTER_AUTH_SECRET is the public development secret; set a random one for production')
+  }
+  if (isProduction) {
+    for (const [key, value] of Object.entries(EXAMPLE_SEED)) {
+      if (env[key] === value) {
+        throw new Error(`${key} is the public example value from .env.example; set your own or leave it unset in production`)
+      }
+    }
+  }
   if (e.DATABASE_URL) {
     throw new Error('DATABASE_URL (external Postgres) is not wired up yet; unset it to use the local PGlite database')
   }

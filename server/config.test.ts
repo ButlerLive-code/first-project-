@@ -58,3 +58,27 @@ describe('loadConfig seed', () => {
     ).toEqual({ enabled: true, adminPassword: 'long-enough-1', demoPassword: 'long-enough-2' })
   })
 })
+
+describe('loadConfig production refuses public values', () => {
+  const base = { NODE_ENV: 'production', BETTER_AUTH_SECRET: 'x'.repeat(32) }
+
+  it('refuses the seed passwords from .env.example', () => {
+    expect(() => loadConfig({ ...base, SEED_ADMIN_PASSWORD: 'admin-password', SEED_DEMO_PASSWORD: 'long-enough-2' })).toThrow(
+      /SEED_ADMIN_PASSWORD/,
+    )
+    expect(() => loadConfig({ ...base, SEED_ADMIN_PASSWORD: 'long-enough-1', SEED_DEMO_PASSWORD: 'demo-password' })).toThrow(
+      /SEED_DEMO_PASSWORD/,
+    )
+    // Even one of them alone (the seed would be off, but the file was copied as is).
+    expect(() => loadConfig({ ...base, SEED_ADMIN_PASSWORD: 'admin-password' })).toThrow(/SEED_ADMIN_PASSWORD/)
+  })
+
+  it('refuses the development fallback secret', () => {
+    const devSecret = loadConfig({}).secret
+    expect(() => loadConfig({ NODE_ENV: 'production', BETTER_AUTH_SECRET: devSecret })).toThrow(/BETTER_AUTH_SECRET/)
+  })
+
+  it('development still accepts the .env.example values', () => {
+    expect(loadConfig({ SEED_ADMIN_PASSWORD: 'admin-password', SEED_DEMO_PASSWORD: 'demo-password' }).seed.enabled).toBe(true)
+  })
+})
