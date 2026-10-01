@@ -7,7 +7,9 @@ import { priceCents } from '../../shared/plans'
 import { checkoutBody } from '../api/checkout'
 import { apiFetch } from '../api/client'
 import { errorMessage } from '../api/errorMessage'
+import { ApiState } from '../api/ApiState'
 import { useMe } from '../api/useApi'
+import { VerifyEmailNotice } from '../auth/ui/VerifyEmailNotice'
 import { useAuth } from '../auth/useAuth'
 import { message, useT, type Message } from '../i18n/useT'
 import { useLocale } from '../i18n/useLocale'
@@ -17,7 +19,7 @@ import { getPlan, plans, type Billing, type PlanId } from '../data/plans'
 
 export function Checkout() {
   const { user } = useAuth()
-  const { data: me } = useMe()
+  const { data: me, error: meError, reload: reloadMe } = useMe()
   const t = useT()
   const locale = useLocale()
   usePageMeta(t.checkout.metaTitle)
@@ -86,6 +88,8 @@ export function Checkout() {
         <b>{user?.email}</b>
         {t.checkout.signedInAfter}
       </p>
+      <VerifyEmailNotice />
+      {meError && <ApiState error={meError} onRetry={reloadMe} />}
 
       <form className="checkout-grid" onSubmit={handleSubmit}>
         <div className="checkout-main">

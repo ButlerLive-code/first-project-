@@ -4,6 +4,7 @@ import { LocalNavLink } from '../../i18n/LocalLink'
 import { useLocalNavigate } from '../../i18n/useLocalNavigate'
 import { errorMessage } from '../../api/errorMessage'
 import { message, useT, type Message } from '../../i18n/useT'
+import { VerifyEmailNotice } from '../../auth/ui/VerifyEmailNotice'
 import { useAuth } from '../../auth/useAuth'
 
 export function DashboardLayout() {
@@ -50,6 +51,8 @@ export function DashboardLayout() {
           {error(t)}
         </p>
       )}
+
+      <VerifyEmailNotice />
 
       <nav className="dashboard-tabs" aria-label={t.dashboard.navLabel}>
         {tabs.map((tab) => (

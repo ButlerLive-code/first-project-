@@ -21,6 +21,10 @@ import { Home } from './pages/Home'
 import { Legal } from './pages/Legal'
 import { Locations } from './pages/Locations'
 import { Login } from './pages/Login'
+import { ForgotPassword } from './pages/ForgotPassword'
+import { ResetPassword } from './pages/ResetPassword'
+import { VerifyEmail } from './pages/VerifyEmail'
+import { DevMail } from './pages/DevMail'
 import { NotFound } from './pages/NotFound'
 import { Partners } from './pages/Partners'
 import { Servers } from './pages/Servers'
@@ -38,6 +42,10 @@ function siteRoutes() {
     <>
       <Route index element={<Home />} />
       <Route path="login" element={<Login />} />
+      <Route path="forgot-password" element={<ForgotPassword />} />
+      <Route path="reset-password" element={<ResetPassword />} />
+      <Route path="verify-email" element={<VerifyEmail />} />
+      <Route path="dev/mail" element={<DevMail />} />
       <Route path="signup" element={<Signup />} />
       <Route
         path="checkout"

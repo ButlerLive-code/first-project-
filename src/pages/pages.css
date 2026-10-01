@@ -806,6 +806,27 @@
   margin-top: 16px;
 }
 
+/* ---------- Sign-in extras ---------- */
+.dev-mail {
+  padding-top: 48px;
+  padding-bottom: 96px;
+}
+
+.dev-mail-list {
+  display: grid;
+  gap: 16px;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dev-mail-text {
+  margin: 12px 0 0;
+  font: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 1100px) {
   .dashboard-grid {

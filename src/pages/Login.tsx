@@ -15,9 +15,11 @@ export function Login() {
   const navigate = useLocalNavigate()
   const [params] = useSearchParams()
   const next = safeNext(params.get('next'))
+  // After a password reset the email is passed along so it does not need retyping.
+  const presetEmail = params.get('email') ?? ''
+  const afterReset = params.get('reset') === '1'
   const [error, setError] = useState<Message>(null)
   const [busy, setBusy] = useState(false)
-  const [resetSent, setResetSent] = useState(false)
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -40,6 +42,11 @@ export function Login() {
       <div className="auth-card">
         <h1 className="auth-title">{t.login.title}</h1>
         <p className="auth-subtitle">{t.login.subtitle}</p>
+        {afterReset && (
+          <p className="form-note" role="status">
+            {t.login.passwordChanged}
+          </p>
+        )}
 
         <form className="form" onSubmit={handleSubmit}>
           <label className="field">
@@ -50,6 +57,7 @@ export function Login() {
               required
               autoComplete="email"
               placeholder={t.auth.emailPlaceholder}
+              defaultValue={presetEmail}
             />
           </label>
           <label className="field">
@@ -64,10 +72,9 @@ export function Login() {
             />
           </label>
           {error && <p className="form-error">{error(t)}</p>}
-          <button type="button" className="link-button" onClick={() => setResetSent(true)}>
+          <LocalLink to="/forgot-password" className="link-button">
             {t.login.forgot}
-          </button>
-          {resetSent && <p className="form-note">{t.login.resetSent}</p>}
+          </LocalLink>
           <button type="submit" className="btn btn-primary form-submit" disabled={busy}>
             {t.login.submit}
           </button>
