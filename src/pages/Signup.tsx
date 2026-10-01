@@ -4,8 +4,12 @@ import { LocalLink } from '../i18n/LocalLink'
 import { useLocalNavigate } from '../i18n/useLocalNavigate'
 import { safeNext } from '../auth/next'
 import { useAuth } from '../auth/useAuth'
+import { useT } from '../i18n/useT'
+import { usePageMeta } from '../i18n/usePageMeta'
 
 export function Signup() {
+  const t = useT()
+  usePageMeta(t.signup.metaTitle)
   const { signUp } = useAuth()
   const navigate = useLocalNavigate()
   const [params] = useSearchParams()
@@ -19,7 +23,7 @@ export function Signup() {
     const email = String(form.get('email')).trim()
     const password = String(form.get('password'))
     if (password.length < 6) {
-      setError('Password must be at least 6 characters.')
+      setError(t.auth.passwordTooShort)
       return
     }
     signUp(name, email)
@@ -29,26 +33,26 @@ export function Signup() {
   return (
     <section className="auth container">
       <div className="auth-card">
-        <h1 className="auth-title">Create your account</h1>
-        <p className="auth-subtitle">Join 90+ users who browse safely with LaslesVPN.</p>
+        <h1 className="auth-title">{t.signup.title}</h1>
+        <p className="auth-subtitle">{t.signup.subtitle}</p>
 
         <form className="form" onSubmit={handleSubmit}>
           <label className="field">
-            <span>Full name</span>
-            <input name="name" required autoComplete="name" placeholder="Viezh Robert" />
+            <span>{t.signup.fullName}</span>
+            <input name="name" required autoComplete="name" placeholder={t.signup.namePlaceholder} />
           </label>
           <label className="field">
-            <span>Email</span>
-            <input name="email" type="email" required autoComplete="email" placeholder="you@example.com" />
+            <span>{t.auth.email}</span>
+            <input name="email" type="email" required autoComplete="email" placeholder={t.auth.emailPlaceholder} />
           </label>
           <label className="field">
-            <span>Password</span>
+            <span>{t.auth.password}</span>
             <input
               name="password"
               type="password"
               required
               autoComplete="new-password"
-              placeholder="At least 6 characters"
+              placeholder={t.signup.passwordPlaceholder}
               onChange={() => setError('')}
             />
           </label>
@@ -56,17 +60,20 @@ export function Signup() {
           <label className="checkbox">
             <input type="checkbox" required />
             <span>
-              I agree to the <LocalLink to="/terms">Terms of Service</LocalLink> and{' '}
-              <LocalLink to="/privacy">Privacy Policy</LocalLink>
+              {t.signup.agreeBefore}
+              <LocalLink to="/terms">{t.signup.terms}</LocalLink>
+              {t.signup.agreeMiddle}
+              <LocalLink to="/privacy">{t.signup.privacy}</LocalLink>
             </span>
           </label>
           <button type="submit" className="btn btn-primary form-submit">
-            Sign Up
+            {t.signup.submit}
           </button>
         </form>
 
         <p className="auth-switch">
-          Already have an account? <LocalLink to={`/login?next=${encodeURIComponent(next)}`}>Sign in</LocalLink>
+          {t.signup.haveAccount}
+          <LocalLink to={`/login?next=${encodeURIComponent(next)}`}>{t.signup.signIn}</LocalLink>
         </p>
       </div>
     </section>
