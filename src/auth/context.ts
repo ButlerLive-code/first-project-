@@ -26,9 +26,10 @@ export interface AuthValue {
   user: AuthUser | null
   // True until the first session check finishes; nothing should redirect before that.
   loading: boolean
-  // True after a successful sign-out or account deletion, until the next sign-in or sign-up.
-  // Protected pages then send the visitor home instead of to /signup.
-  leaving: boolean
+  // The path the visitor signed out or deleted the account from, until the next
+  // sign-in or sign-up. That page sends them home instead of to /signup while
+  // the emptied session catches up; other protected pages redirect as usual.
+  leavingFrom: string | null
   // 'two-factor' means the password was right and /login/2fa must finish the sign-in.
   signIn: (email: string, password: string) => Promise<'ok' | 'two-factor'>
   signUp: (input: SignUpInput) => Promise<void>

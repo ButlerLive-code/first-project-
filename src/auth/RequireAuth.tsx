@@ -10,7 +10,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   const location = useLocation()
   const t = useT()
 
-  switch (authGate(auth)) {
+  switch (authGate({ ...auth, pathname: location.pathname })) {
     case 'wait':
       return (
         <p className="container form-note" role="status">

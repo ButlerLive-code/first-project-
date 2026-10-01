@@ -19,7 +19,7 @@ export function DeleteAccountCard() {
     setError(null)
     try {
       await deleteAccount(password)
-      // deleteAccount sets `leaving`, so RequireAuth sends the visitor home
+      // deleteAccount records `leavingFrom`, so RequireAuth sends the visitor home
       // rather than to /signup while the session store catches up.
       navigate('/', { replace: true })
     } catch (err) {

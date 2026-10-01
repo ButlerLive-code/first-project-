@@ -9,8 +9,11 @@ it('waits for the session instead of redirecting on reload', () => {
   expect(authGate({ user: { id: '1' }, loading: true })).toBe('show')
 })
 
-it('goes home, not to sign-up, after signing out or deleting the account', () => {
-  expect(authGate({ user: null, loading: false, leaving: true })).toBe('home')
-  expect(authGate({ user: { id: '1' }, loading: false, leaving: true })).toBe('show')
-  expect(authGate({ user: null, loading: false, leaving: false })).toBe('redirect')
+it('goes home only on the page the visitor left from', () => {
+  const base = { user: null, loading: false, leavingFrom: '/dashboard' }
+  expect(authGate({ ...base, pathname: '/dashboard' })).toBe('home')
+  // A later visit to another protected page (the pricing buttons go to /checkout) is a normal redirect.
+  expect(authGate({ ...base, pathname: '/checkout' })).toBe('redirect')
+  expect(authGate({ user: { id: '1' }, loading: false, leavingFrom: '/dashboard', pathname: '/dashboard' })).toBe('show')
+  expect(authGate({ user: null, loading: false, leavingFrom: null, pathname: '/dashboard' })).toBe('redirect')
 })
