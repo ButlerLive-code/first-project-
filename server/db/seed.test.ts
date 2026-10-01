@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, expect, it } from 'vitest'
 import { createTestApp, json, type TestApp } from '../test/helpers.ts'
-import { device, payment, subscription, user } from './schema.ts'
+import { account, device, payment, subscription, user } from './schema.ts'
 import { ADMIN_EMAIL, DEMO_EMAIL, seed } from './seed.ts'
 
 let t: TestApp
@@ -62,5 +62,31 @@ it('in production refuses to seed unless both passwords are set explicitly', asy
     expect(await ok.db.select().from(user)).toHaveLength(2)
   } finally {
     await ok.close()
+  }
+})
+
+it('completes a partial seed: only the admin exists, then demo data is missing pieces', async () => {
+  const p = await createTestApp()
+  try {
+    // Simulate a crash after the admin: drop everything the demo needs.
+    expect(await seed(p.db, p.auth, p.config.seed)).toBe(true)
+    await p.db.delete(user).where(eq(user.email, DEMO_EMAIL))
+    expect(await seed(p.db, p.auth, p.config.seed)).toBe(true)
+    expect(await seed(p.db, p.auth, p.config.seed)).toBe(false)
+    const [demo] = await p.db.select().from(user).where(eq(user.email, DEMO_EMAIL))
+    expect(await p.db.select().from(subscription).where(eq(subscription.userId, demo.id))).toHaveLength(1)
+    expect(await p.db.select().from(device).where(eq(device.userId, demo.id))).toHaveLength(2)
+    expect(await p.db.select().from(payment).where(eq(payment.userId, demo.id))).toHaveLength(3)
+    expect(await p.db.select().from(account).where(eq(account.userId, demo.id))).toHaveLength(1)
+
+    // Missing devices and payments only.
+    await p.db.delete(device).where(eq(device.userId, demo.id))
+    await p.db.delete(payment).where(eq(payment.userId, demo.id))
+    expect(await seed(p.db, p.auth, p.config.seed)).toBe(true)
+    expect(await p.db.select().from(device).where(eq(device.userId, demo.id))).toHaveLength(2)
+    expect(await p.db.select().from(payment).where(eq(payment.userId, demo.id))).toHaveLength(3)
+    expect(await p.db.select().from(user)).toHaveLength(2)
+  } finally {
+    await p.close()
   }
 })

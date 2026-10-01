@@ -19,7 +19,8 @@ if (!config.seed.enabled) {
   console.log('[db] seed skipped: in production set both SEED_ADMIN_PASSWORD and SEED_DEMO_PASSWORD to create the demo accounts')
 } else if (await seed(db, auth, config.seed)) console.log('[db] seeded admin@laslesvpn.test and demo@laslesvpn.test')
 const app = createApp({ config, db, auth })
-const server = serve({ fetch: app.fetch, port: config.port }, ({ port }) => {
+// Loopback only: Vite proxies to it, and a direct client could spoof X-Forwarded-For.
+const server = serve({ fetch: app.fetch, port: config.port, hostname: '127.0.0.1' }, ({ port }) => {
   console.log(`[api] http://localhost:${port} (site: ${config.appUrl})`)
 })
 
