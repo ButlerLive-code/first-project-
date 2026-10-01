@@ -1,49 +1,76 @@
 import { useState, type FormEvent } from 'react'
+import type { Device } from '../../../shared/api'
+import { deviceLimit } from '../../../shared/plans'
+import { ApiState } from '../../api/ApiState'
+import { apiFetch } from '../../api/client'
+import { errorMessage } from '../../api/errorMessage'
+import { useDevices, useMe } from '../../api/useApi'
 import { LocalLink } from '../../i18n/LocalLink'
-import { formatDate, getDevices, newId } from '../../auth/account'
-import type { Device } from '../../auth/context'
-import { useAuth } from '../../auth/useAuth'
+import { formatDate } from '../../auth/account'
 import { getPlatform, getPlatforms } from '../../data/platforms'
 import { useLocale } from '../../i18n/useLocale'
 import { usePageMeta } from '../../i18n/usePageMeta'
-import { useT } from '../../i18n/useT'
+import { message, useT, type Message } from '../../i18n/useT'
 import { getPlan } from '../../data/plans'
 
 export function Devices() {
-  const { user, updateUser } = useAuth()
+  const me = useMe()
+  const devicesState = useDevices()
   const t = useT()
   const locale = useLocale()
   const platforms = getPlatforms(locale)
   usePageMeta(t.devices.metaTitle)
   const [added, setAdded] = useState<Device | null>(null)
+  const [error, setError] = useState<Message>(null)
+  const [busy, setBusy] = useState(false)
 
-  if (!user) return null
+  if (!me.data || !devicesState.data) {
+    return (
+      <ApiState
+        error={me.error ?? devicesState.error}
+        onRetry={() => {
+          me.reload()
+          devicesState.reload()
+        }}
+      />
+    )
+  }
 
-  const plan = getPlan(user.plan)
-  const limit = plan?.devices ?? 1
-  const devices = getDevices(user, t.devices.defaultName)
+  const plan = getPlan(me.data.subscription?.plan)
+  const limit = deviceLimit(plan?.id)
+  const devices = devicesState.data
   const full = devices.length >= limit
   const over = devices.length > limit
 
-  function save(next: Device[]) {
-    updateUser({ devices: next })
-  }
-
-  function handleAdd(e: FormEvent<HTMLFormElement>) {
+  async function handleAdd(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const form = e.currentTarget
     const data = new FormData(form)
     const platform = String(data.get('platform'))
     const name = String(data.get('name')).trim() || t.devices.defaultName(getPlatform(platform, locale)?.name)
-    const device = { id: newId('DEV'), name, platform, addedAt: new Date().toISOString() }
-    save([...devices, device])
-    setAdded(device)
-    form.reset()
+    setBusy(true)
+    setError(null)
+    try {
+      const device = await apiFetch<Device>('/api/me/devices', { method: 'POST', body: { name, platform } })
+      devicesState.setData([...devices, device])
+      setAdded(device)
+      form.reset()
+    } catch (err) {
+      setError(message((t) => errorMessage(t, err)))
+    } finally {
+      setBusy(false)
+    }
   }
 
-  function remove(id: string) {
-    save(devices.filter((device) => device.id !== id))
-    if (added?.id === id) setAdded(null)
+  async function remove(id: string) {
+    setError(null)
+    try {
+      await apiFetch(`/api/me/devices/${encodeURIComponent(id)}`, { method: 'DELETE' })
+      devicesState.setData(devices.filter((device) => device.id !== id))
+      if (added?.id === id) setAdded(null)
+    } catch (err) {
+      setError(message((t) => errorMessage(t, err)))
+    }
   }
 
   return (
@@ -71,6 +98,12 @@ export function Devices() {
         </div>
       )}
 
+      {error && (
+        <p className="form-error" role="alert">
+          {error(t)}
+        </p>
+      )}
+
       <ul className="device-list">
         {devices.map((device) => {
           const platform = getPlatform(device.platform, locale)
@@ -80,21 +113,14 @@ export function Devices() {
                 {platform?.icon}
               </span>
               <div className="device-info">
-                <p className="device-name">
-                  {device.name}
-                  {device.current && <span className="badge badge-green">{t.common.thisDevice}</span>}
-                </p>
+                <p className="device-name">{device.name}</p>
                 <p className="device-meta">
-                  {t.devices.meta(platform?.name ?? '', formatDate(device.addedAt, locale))}
+                  {t.devices.meta(platform?.name ?? '', formatDate(device.createdAt, locale))}
                 </p>
               </div>
-              {device.current ? (
-                <span className="device-meta">{t.devices.signedInNow}</span>
-              ) : (
-                <button type="button" className="btn btn-outline btn-sm" onClick={() => remove(device.id)}>
-                  {t.devices.remove}
-                </button>
-              )}
+              <button type="button" className="btn btn-outline btn-sm" onClick={() => remove(device.id)}>
+                {t.devices.remove}
+              </button>
             </li>
           )
         })}
@@ -131,7 +157,7 @@ export function Devices() {
                 ))}
               </select>
             </label>
-            <button type="submit" className="btn btn-primary">
+            <button type="submit" className="btn btn-primary" disabled={busy}>
               {t.devices.addDevice}
             </button>
           </form>

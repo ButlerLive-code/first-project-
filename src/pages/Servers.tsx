@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { LocalLink } from '../i18n/LocalLink'
+import { premiumAction } from '../api/premiumAction'
+import { useMe } from '../api/useApi'
 import { useAuth } from '../auth/useAuth'
 import { useConnectHref } from '../auth/useConnectHref'
 import { LoadBar } from '../components/LoadBar'
@@ -16,6 +18,7 @@ export function Servers() {
   const locale = useLocale()
   usePageMeta(t.servers.metaTitle)
   const { user } = useAuth()
+  const meState = useMe()
   const connectHref = useConnectHref()
   const [query, setQuery] = useState('')
   const [region, setRegion] = useState<Region | 'all'>('all')
@@ -31,7 +34,7 @@ export function Servers() {
     )
     .sort((a, b) => (sort === 'country' ? placeName(a.country, locale).localeCompare(placeName(b.country, locale), locale) : a[sort] - b[sort]))
 
-  const canUse = (premium: boolean) => !premium || user?.plan === 'premium'
+  const action = (premium: boolean) => (premium ? premiumAction(!!user, meState) : 'connect')
 
   return (
     <>
@@ -119,10 +122,14 @@ export function Servers() {
                       </span>
                     </td>
                     <td>
-                      {canUse(s.premium) || !user ? (
+                      {action(s.premium) === 'connect' ? (
                         <LocalLink to={connectHref(s.id)} className="btn btn-outline btn-sm">
                           {t.servers.connect}
                         </LocalLink>
+                      ) : action(s.premium) === 'pending' ? (
+                        <button type="button" className="btn btn-outline btn-sm" disabled>
+                          {t.common.loading}
+                        </button>
                       ) : (
                         <LocalLink to="/checkout?plan=premium" className="btn btn-outline btn-sm">
                           {t.servers.upgrade}

@@ -1,36 +1,44 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router'
 import { useLocalNavigate } from '../i18n/useLocalNavigate'
-import { newId } from '../auth/account'
-import type { Billing } from '../auth/context'
+import type { CheckoutResult } from '../../shared/api'
+import { formatCardNumber, formatExpiry, isExpiryValid } from '../../shared/card'
+import { priceCents } from '../../shared/plans'
+import { checkoutBody } from '../api/checkout'
+import { apiFetch } from '../api/client'
+import { errorMessage } from '../api/errorMessage'
+import { ApiState } from '../api/ApiState'
+import { useMe } from '../api/useApi'
+import { VerifyEmailNotice } from '../auth/ui/VerifyEmailNotice'
 import { useAuth } from '../auth/useAuth'
 import { message, useT, type Message } from '../i18n/useT'
 import { useLocale } from '../i18n/useLocale'
 import { usePageMeta } from '../i18n/usePageMeta'
 import { formatPrice } from '../i18n/format'
-import { getPlan, plans, type PlanId } from '../data/plans'
-import { cardBrand, formatCardNumber, formatExpiry, isExpiryValid } from '../utils/card'
-
-// Yearly billing: pay for 10 months, get 12.
-const YEARLY_MONTHS = 10
+import { getPlan, plans, type Billing, type PlanId } from '../data/plans'
 
 export function Checkout() {
-  const { user, updateUser } = useAuth()
+  const { user } = useAuth()
+  const { data: me, error: meError, reload: reloadMe } = useMe()
   const t = useT()
   const locale = useLocale()
   usePageMeta(t.checkout.metaTitle)
   const navigate = useLocalNavigate()
   const [params, setParams] = useSearchParams()
-  const plan = getPlan(params.get('plan')) ?? getPlan(user?.plan) ?? plans[1]
-  const [billing, setBilling] = useState<Billing>(user?.billing ?? 'monthly')
+  const current = me?.subscription ?? null
+  const plan = getPlan(params.get('plan')) ?? getPlan(current?.plan) ?? plans[1]
+  const [chosenBilling, setBilling] = useState<Billing | null>(null)
+  const billing = chosenBilling ?? current?.billing ?? 'monthly'
   const [card, setCard] = useState({ name: '', number: '', expiry: '', cvc: '' })
   const [error, setError] = useState<Message>(null)
   const [processing, setProcessing] = useState(false)
 
   const isFree = plan.price === 0
-  const total = billing === 'yearly' ? plan.price * YEARLY_MONTHS : plan.price
+  // What the page shows; the server computes the real charge on its own.
+  const total = priceCents(plan.id, billing) / 100
   // Switching the billing period of the current plan is a valid order.
-  const isCurrent = user?.plan === plan.id && (isFree || (user.billing ?? 'monthly') === billing)
+  const isCurrent =
+    current?.status === 'active' && current.plan === plan.id && (isFree || (current.billing ?? 'monthly') === billing)
 
   function selectPlan(id: PlanId) {
     setParams({ plan: id }, { replace: true })
@@ -51,30 +59,25 @@ export function Checkout() {
     setError(null)
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault()
+    // Quick checks for a friendlier form; the server validates again and decides.
     if (!isFree) {
       if (card.number.replace(/\s/g, '').length !== 16) return setError(message((t) => t.checkout.errors.cardNumber))
       if (!isExpiryValid(card.expiry)) return setError(message((t) => t.checkout.errors.expiry))
       if (card.cvc.length < 3) return setError(message((t) => t.checkout.errors.cvc))
     }
     setProcessing(true)
-    // Simulated payment round-trip. Card details never leave this component.
-    setTimeout(() => {
-      if (isFree) {
-        updateUser({ plan: plan.id, billing: undefined })
-      } else {
-        // Only the brand and last four digits are kept, for the Billing tab.
-        const payment = { id: newId('INV'), date: new Date().toISOString(), plan: plan.id, billing, amount: total }
-        updateUser({
-          plan: plan.id,
-          billing,
-          payments: [payment, ...(user?.payments ?? [])],
-          card: { brand: cardBrand(card.number), last4: card.number.replace(/\s/g, '').slice(-4), expiry: card.expiry },
-        })
-      }
+    try {
+      await apiFetch<CheckoutResult>('/api/checkout', {
+        method: 'POST',
+        body: checkoutBody(plan.id, billing, card),
+      })
       navigate('/dashboard?welcome=1', { replace: true })
-    }, 1200)
+    } catch (err) {
+      setError(message((t) => errorMessage(t, err)))
+      setProcessing(false)
+    }
   }
 
   return (
@@ -85,6 +88,8 @@ export function Checkout() {
         <b>{user?.email}</b>
         {t.checkout.signedInAfter}
       </p>
+      <VerifyEmailNotice />
+      {meError && <ApiState error={meError} onRetry={reloadMe} />}
 
       <form className="checkout-grid" onSubmit={handleSubmit}>
         <div className="checkout-main">
@@ -105,7 +110,7 @@ export function Checkout() {
                   <span className="plan-option-price">
                     {p.price === 0 ? t.pricing.free : `${formatPrice(p.price, locale)} ${t.pricing.perMonth}`}
                   </span>
-                  {user?.plan === p.id && <span className="badge">{t.checkout.current}</span>}
+                  {current?.plan === p.id && <span className="badge">{t.checkout.current}</span>}
                 </label>
               ))}
             </div>
@@ -202,7 +207,7 @@ export function Checkout() {
           {billing === 'yearly' && !isFree && (
             <p className="summary-line">
               <span>{t.checkout.discount}</span>
-              <span className="summary-discount">−{formatPrice(plan.price * 2, locale)}</span>
+              <span className="summary-discount">−{formatPrice(plan.price * 12 - total, locale)}</span>
             </p>
           )}
           <p className="summary-line summary-total">
@@ -210,7 +215,7 @@ export function Checkout() {
             <span>{formatPrice(total, locale)}</span>
           </p>
           {error && <p className="form-error">{error(t)}</p>}
-          <button type="submit" className="btn btn-primary form-submit" disabled={processing || isCurrent}>
+          <button type="submit" className="btn btn-primary form-submit" disabled={processing || isCurrent || !me}>
             {processing
               ? t.checkout.processing
               : isCurrent

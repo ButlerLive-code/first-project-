@@ -1,14 +1,17 @@
-import { startTransition } from 'react'
+import { useState } from 'react'
 import { Outlet } from 'react-router'
 import { LocalNavLink } from '../../i18n/LocalLink'
 import { useLocalNavigate } from '../../i18n/useLocalNavigate'
-import { useT } from '../../i18n/useT'
+import { errorMessage } from '../../api/errorMessage'
+import { message, useT, type Message } from '../../i18n/useT'
+import { VerifyEmailNotice } from '../../auth/ui/VerifyEmailNotice'
 import { useAuth } from '../../auth/useAuth'
 
 export function DashboardLayout() {
   const { user, signOut } = useAuth()
   const navigate = useLocalNavigate()
   const t = useT()
+  const [error, setError] = useState<Message>(null)
 
   if (!user) return null
 
@@ -19,13 +22,16 @@ export function DashboardLayout() {
     { to: '/dashboard/settings', label: t.dashboard.tabs.settings },
   ]
 
-  function handleSignOut() {
-    // The router navigates inside a transition; signing out in the same
-    // transition keeps RequireAuth from redirecting to /signup first.
-    startTransition(() => {
+  async function handleSignOut() {
+    setError(null)
+    try {
+      await signOut()
+      // signOut records `leavingFrom`, so RequireAuth sends us home, not to sign-in,
+      // if the emptied session lands before this navigation commits.
       navigate('/')
-      signOut()
-    })
+    } catch (err) {
+      setError(message((t) => errorMessage(t, err)))
+    }
   }
 
   return (
@@ -39,6 +45,14 @@ export function DashboardLayout() {
           {t.dashboard.signOut}
         </button>
       </div>
+
+      {error && (
+        <p className="form-error" role="alert">
+          {error(t)}
+        </p>
+      )}
+
+      <VerifyEmailNotice />
 
       <nav className="dashboard-tabs" aria-label={t.dashboard.navLabel}>
         {tabs.map((tab) => (

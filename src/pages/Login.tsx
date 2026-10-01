@@ -1,8 +1,11 @@
 import { useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router'
+import { errorMessage } from '../api/errorMessage'
 import { LocalLink } from '../i18n/LocalLink'
 import { useLocalNavigate } from '../i18n/useLocalNavigate'
+import { googleErrorKey } from '../auth/google'
 import { safeNext } from '../auth/next'
+import { GoogleButton } from '../auth/ui/GoogleButton'
 import { useAuth } from '../auth/useAuth'
 import { message, useT, type Message } from '../i18n/useT'
 import { usePageMeta } from '../i18n/usePageMeta'
@@ -14,20 +17,28 @@ export function Login() {
   const navigate = useLocalNavigate()
   const [params] = useSearchParams()
   const next = safeNext(params.get('next'))
+  // After a password reset the email is passed along so it does not need retyping.
+  const presetEmail = params.get('email') ?? ''
+  const afterReset = params.get('reset') === '1'
+  // The way back from a failed or cancelled Google sign-in: ?error=<code>.
+  const googleError = googleErrorKey(params.get('error'))
   const [error, setError] = useState<Message>(null)
-  const [resetSent, setResetSent] = useState(false)
+  const [busy, setBusy] = useState(false)
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const form = new FormData(e.currentTarget)
     const email = String(form.get('email')).trim()
     const password = String(form.get('password'))
-    if (password.length < 6) {
-      setError(message((t) => t.auth.passwordTooShort))
-      return
+    setBusy(true)
+    try {
+      const result = await signIn(email, password)
+      if (result === 'two-factor') navigate(`/login/2fa?next=${encodeURIComponent(next)}`, { replace: true })
+      else navigate(next, { replace: true })
+    } catch (err) {
+      setError(message((t) => errorMessage(t, err)))
+      setBusy(false)
     }
-    signIn(email)
-    navigate(next, { replace: true })
   }
 
   return (
@@ -35,11 +46,36 @@ export function Login() {
       <div className="auth-card">
         <h1 className="auth-title">{t.login.title}</h1>
         <p className="auth-subtitle">{t.login.subtitle}</p>
+        {afterReset && (
+          <p className="form-note" role="status">
+            {t.login.passwordChanged}
+          </p>
+        )}
+
+        {googleError && (
+          <p className="form-error" role="alert">
+            {t.auth[googleError]}
+            {googleError === 'googleNotLinked' && (
+              <>
+                {' '}
+                <LocalLink to="/forgot-password">{t.login.forgot}</LocalLink>
+              </>
+            )}
+          </p>
+        )}
+        <GoogleButton next={next} />
 
         <form className="form" onSubmit={handleSubmit}>
           <label className="field">
             <span>{t.auth.email}</span>
-            <input name="email" type="email" required autoComplete="email" placeholder={t.auth.emailPlaceholder} />
+            <input
+              name="email"
+              type="email"
+              required
+              autoComplete="email"
+              placeholder={t.auth.emailPlaceholder}
+              defaultValue={presetEmail}
+            />
           </label>
           <label className="field">
             <span>{t.auth.password}</span>
@@ -53,11 +89,10 @@ export function Login() {
             />
           </label>
           {error && <p className="form-error">{error(t)}</p>}
-          <button type="button" className="link-button" onClick={() => setResetSent(true)}>
+          <LocalLink to="/forgot-password" className="link-button">
             {t.login.forgot}
-          </button>
-          {resetSent && <p className="form-note">{t.login.resetSent}</p>}
-          <button type="submit" className="btn btn-primary form-submit">
+          </LocalLink>
+          <button type="submit" className="btn btn-primary form-submit" disabled={busy}>
             {t.login.submit}
           </button>
         </form>

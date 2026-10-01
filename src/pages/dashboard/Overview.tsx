@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { LocalLink } from '../../i18n/LocalLink'
-import { formatDate, getDevices, renewalDate } from '../../auth/account'
-import { useAuth } from '../../auth/useAuth'
+import { ApiState } from '../../api/ApiState'
+import { useDevices, useMe } from '../../api/useApi'
+import { formatDate } from '../../auth/account'
 import { getPlatform } from '../../data/platforms'
 import { formatMonthYear, formatPrice } from '../../i18n/format'
 import { useLocale } from '../../i18n/useLocale'
@@ -29,12 +30,14 @@ function fakeIp(serverId: string) {
 }
 
 export function Overview() {
-  const { user } = useAuth()
+  const me = useMe()
+  const devicesState = useDevices()
   const t = useT()
   const locale = useLocale()
   usePageMeta(t.overview.metaTitle)
   const [params, setParams] = useSearchParams()
-  const plan = getPlan(user?.plan)
+  const subscription = me.data?.subscription ?? null
+  const plan = getPlan(subscription?.plan)
   const [serverId, setServerId] = useState(
     () => servers.find((s) => s.id === params.get('server'))?.id ?? servers[0].id,
   )
@@ -54,10 +57,21 @@ export function Overview() {
     return () => clearInterval(timer)
   }, [connectedAt])
 
-  if (!user) return null
+  if (!me.data || !devicesState.data) {
+    return (
+      <ApiState
+        error={me.error ?? devicesState.error}
+        onRetry={() => {
+          me.reload()
+          devicesState.reload()
+        }}
+      />
+    )
+  }
 
-  const devices = getDevices(user, t.devices.defaultName)
-  const lastPayment = user.payments?.[0]
+  const devices = devicesState.data
+  // A cancelled plan does not renew; it just runs out.
+  const renewsAt = subscription?.status === 'active' ? subscription.renewsAt : null
 
   function toggleConnection() {
     if (connectedAt !== null) {
@@ -163,12 +177,8 @@ export function Overview() {
                   <b>{plan.id === 'premium' ? servers.length : servers.filter((s) => !s.premium).length}</b>
                 </li>
                 <li>
-                  <span>{lastPayment && plan.price > 0 ? t.overview.renewsOn : t.overview.memberSince}</span>
-                  <b>
-                    {lastPayment && plan.price > 0
-                      ? formatDate(renewalDate(lastPayment), locale)
-                      : formatMonthYear(user.memberSince, locale)}
-                  </b>
+                  <span>{renewsAt ? t.overview.renewsOn : t.overview.memberSince}</span>
+                  <b>{renewsAt ? formatDate(renewsAt, locale) : formatMonthYear(me.data.user.createdAt, locale)}</b>
                 </li>
               </ul>
               <LocalLink to="/dashboard/billing" className="btn btn-outline">
@@ -195,7 +205,6 @@ export function Overview() {
                 <span>
                   {getPlatform(device.platform, locale)?.icon} {device.name}
                 </span>
-                {device.current && <span className="badge badge-green">{t.common.thisDevice}</span>}
               </li>
             ))}
           </ul>

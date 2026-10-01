@@ -1,37 +1,21 @@
+import { getPlanInfo, planInfo, type PlanInfo } from '../../shared/plans'
 import planFree from '../assets/plan-free.svg'
 import planStandard from '../assets/plan-standard.svg'
 import planPremium from '../assets/plan-premium.svg'
 
-export type PlanId = 'free' | 'standard' | 'premium'
+export type { Billing, PlanId } from '../../shared/plans'
 
-export interface Plan {
-  id: PlanId
+// Prices and device limits live in shared/plans.ts (the API charges from
+// them); the site only adds the pictures.
+export interface Plan extends PlanInfo {
   image: string
-  price: number
-  devices: number
 }
 
-export const plans: Plan[] = [
-  {
-    id: 'free',
-    image: planFree,
-    price: 0,
-    devices: 1,
-  },
-  {
-    id: 'standard',
-    image: planStandard,
-    price: 9,
-    devices: 3,
-  },
-  {
-    id: 'premium',
-    image: planPremium,
-    price: 12,
-    devices: 6,
-  },
-]
+const images: Record<PlanInfo['id'], string> = { free: planFree, standard: planStandard, premium: planPremium }
+
+export const plans: Plan[] = planInfo.map((plan) => ({ ...plan, image: images[plan.id] }))
 
 export function getPlan(id: string | null | undefined): Plan | undefined {
-  return plans.find((plan) => plan.id === id)
+  const info = getPlanInfo(id)
+  return info && plans.find((plan) => plan.id === info.id)
 }
