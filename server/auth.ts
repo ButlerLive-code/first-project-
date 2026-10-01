@@ -76,7 +76,16 @@ export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
       accountLinking: { enabled: true, trustedProviders: ['google'], requireLocalEmailVerified: true },
     },
     socialProviders: config.google
-      ? { google: { clientId: config.google.clientId, clientSecret: config.google.clientSecret } }
+      ? {
+          google: {
+            clientId: config.google.clientId,
+            clientSecret: config.google.clientSecret,
+            // The ID-token flow returns a session straight from sign-in/social,
+            // where neither the 2FA hook nor the plugin's applies. The site only
+            // uses the redirect flow.
+            disableIdTokenSignIn: true,
+          },
+        }
       : {},
     // Every OAuth failure (cancelled, bad state, not linkable) ends on a site
     // page, never on Better Auth's English /api/auth/error. The sign-in call

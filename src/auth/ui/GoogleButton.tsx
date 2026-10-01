@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { errorMessage } from '../../api/errorMessage'
 import { useConfig } from '../../api/useApi'
 import { useLocale } from '../../i18n/useLocale'
@@ -16,6 +16,16 @@ export function GoogleButton({ next }: { next: string }) {
   const { data: config } = useConfig()
   const [error, setError] = useState<Message>(null)
   const [busy, setBusy] = useState(false)
+
+  // Coming back from Google with the back button can restore this page from
+  // the back/forward cache with the button still busy.
+  useEffect(() => {
+    const reset = (e: PageTransitionEvent) => {
+      if (e.persisted) setBusy(false)
+    }
+    window.addEventListener('pageshow', reset)
+    return () => window.removeEventListener('pageshow', reset)
+  }, [])
 
   if (!config?.googleEnabled) return null
 

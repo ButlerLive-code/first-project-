@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm'
+import { exportJWK, generateKeyPair, SignJWT } from 'jose'
 import { afterAll, beforeAll, expect, it, vi } from 'vitest'
 import { account, session, user } from './db/schema.ts'
 import { APP_URL, createTestApp, json, mergeCookies, PASSWORD, totp, type TestApp } from './test/helpers.ts'
@@ -206,4 +207,38 @@ it('refuses a foreign error page too', async () => {
   })
   expect(res.status).toBe(403)
   expect(await json(res)).toEqual({ error: { code: 'forbidden' } })
+})
+
+it('refuses Google ID-token sign-in even with a valid token, which would skip the second step', async () => {
+  const { publicKey, privateKey } = await generateKeyPair('RS256')
+  const jwk = { ...(await exportJWK(publicKey)), kid: 'k1', alg: 'RS256', use: 'sig' }
+  const token = await new SignJWT({ email: 'idtoken@example.com', email_verified: true, name: 'Id Token' })
+    .setProtectedHeader({ alg: 'RS256', kid: 'k1' })
+    .setIssuer('https://accounts.google.com')
+    .setAudience('id.apps.googleusercontent.com')
+    .setSubject('g-idtoken')
+    .setIssuedAt()
+    .setExpirationTime('1h')
+    .sign(privateKey)
+  const stubbed = globalThis.fetch
+  vi.stubGlobal('fetch', async (input: string | URL | Request, init?: RequestInit) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+    if (url.startsWith('https://www.googleapis.com/oauth2/v3/certs')) {
+      return new Response(JSON.stringify({ keys: [jwk] }), { headers: { 'content-type': 'application/json' } })
+    }
+    return stubbed(input, init)
+  })
+  try {
+    const sessionsBefore = (await on.db.select().from(session)).length
+    const res = await on.call('/api/auth/sign-in/social', {
+      method: 'POST',
+      body: { provider: 'google', idToken: { token } },
+    })
+    expect(res.status).toBeGreaterThanOrEqual(400)
+    expect(Object.keys(await json(res))).toEqual(['error'])
+    expect(res.headers.getSetCookie()).toEqual([])
+    expect((await on.db.select().from(session)).length).toBe(sessionsBefore)
+  } finally {
+    vi.stubGlobal('fetch', stubbed)
+  }
 })

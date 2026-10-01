@@ -32,8 +32,9 @@ export function LoginTwoFactor() {
       else await completeTwoFactor(code.replace(/\s/g, ''), 'totp')
       navigate(next, { replace: true })
     } catch (err) {
-      // No two_factor cookie (missing or expired): start over. /login never sends
-      // anyone back here without a fresh password step, so this cannot loop.
+      // No two_factor cookie (missing or expired): start over. /login only sends
+      // anyone here after a password step or a Google callback that has just set
+      // the cookie, so this cannot loop.
       if (toApiError(err).code === 'unauthorized') {
         navigate(`/login?next=${encodeURIComponent(next)}`, { replace: true })
         return

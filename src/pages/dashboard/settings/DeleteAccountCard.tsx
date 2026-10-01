@@ -68,13 +68,17 @@ export function DeleteAccountCard() {
           </p>
         )}
         {error && <p className="form-error">{error(t)}</p>}
-        <button type="submit" className="btn btn-danger" disabled={
+        <button
+          type="submit"
+          className="btn btn-danger"
+          disabled={
             busy ||
             passwordState === 'loading' ||
             passwordState === 'error' ||
             word !== t.settings.deleteWord ||
             (needsPassword && !password)
-          }>
+          }
+        >
           {t.settings.deleteButton}
         </button>
       </form>
