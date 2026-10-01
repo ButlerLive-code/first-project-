@@ -14,9 +14,9 @@ const attributePatterns = [
   /\b(?:label|title|text|description|placeholder|q|a):\s*'([^']*[A-Za-z][^']*)'/g,
 ]
 // Code patterns to skip JSX text
-const codePatterns = [/=>/, /&&/, /\|\|/, /===/, /!==/, / = /, /;/]
-// Operators that text shouldn't start with
-const startOpChars = /^[=&|?:)(,./]/
+const codePatterns = [/=>/, /&&/, /\|\|/, /===/, /!==/, / = /, /;/, /\bimport\b/, /\bexport\b/, /\bfrom\b/, /\brequire\b/, /\bconst\b/, /\blet\b/, /\bvar\b/, /\bfunction\b/, /`/, /\$\{/, /\)\s*[}>\]]/, /\w+\(/]
+// Operators that text shouldn't start with (check after trim)
+const startOpChars = /^[=&|?:)(,.]/
 
 export function scanSource(code) {
   const findings = []
@@ -25,8 +25,9 @@ export function scanSource(code) {
   // Scan for multi-line JSX text
   for (const match of code.matchAll(jsxTextPattern)) {
     const rawText = match[1]
+    const trimmedRawText = rawText.trim()
     // Skip if it looks like code
-    if (codePatterns.some(p => p.test(rawText)) || startOpChars.test(rawText.trim())) continue
+    if (codePatterns.some(p => p.test(rawText)) || startOpChars.test(trimmedRawText)) continue
 
     // Compute line number where the text starts
     // Count newlines before the match, then newlines before first letter in captured text
