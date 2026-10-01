@@ -1,15 +1,27 @@
 import type { ReactNode } from 'react'
 import { useLocation } from 'react-router'
 import { LocalNavigate } from '../i18n/LocalLink'
+import { useT } from '../i18n/useT'
+import { authGate } from './gate'
 import { useAuth } from './useAuth'
 
 export function RequireAuth({ children }: { children: ReactNode }) {
-  const { user } = useAuth()
+  const auth = useAuth()
   const location = useLocation()
+  const t = useT()
 
-  if (!user) {
-    const next = location.pathname + location.search
-    return <LocalNavigate to={`/signup?next=${encodeURIComponent(next)}`} replace />
+  switch (authGate(auth)) {
+    case 'wait':
+      return (
+        <p className="container form-note" role="status">
+          {t.common.loading}
+        </p>
+      )
+    case 'redirect': {
+      const next = location.pathname + location.search
+      return <LocalNavigate to={`/signup?next=${encodeURIComponent(next)}`} replace />
+    }
+    case 'show':
+      return children
   }
-  return children
 }

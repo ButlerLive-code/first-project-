@@ -1,95 +1,66 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react'
-import { AuthContext, type User } from './context'
+import { useCallback, useMemo, type ReactNode } from 'react'
+import { apiFetch } from '../api/client'
+import type { Role } from '../../shared/api'
+import { authCall } from './authCall'
+import { authClient } from './client'
+import { AuthContext, type AuthUser, type AuthValue } from './context'
 
-// Demo-only auth: the session lives in this browser's localStorage and no
-// password is ever stored. Storage can be unavailable (private mode), so every
-// access is guarded and the app keeps working with in-memory state.
-const SESSION_KEY = 'laslesvpn.session'
-const ACCOUNTS_KEY = 'laslesvpn.accounts'
+type SessionUser = NonNullable<ReturnType<typeof authClient.useSession>['data']>['user']
 
-function read<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key)
-    return raw ? (JSON.parse(raw) as T) : fallback
-  } catch {
-    return fallback
+function toAuthUser(user: SessionUser): AuthUser {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    emailVerified: user.emailVerified,
+    locale: user.locale === 'ru' ? 'ru' : 'en',
+    role: (user.role ?? 'customer') as Role,
+    twoFactorEnabled: user.twoFactorEnabled === true,
+    createdAt: new Date(user.createdAt).toISOString(),
   }
 }
 
-function write(key: string, value: unknown) {
-  try {
-    if (value === null) localStorage.removeItem(key)
-    else localStorage.setItem(key, JSON.stringify(value))
-  } catch {
-    // ignore: the session just won't survive a reload
-  }
-}
-
-function nameFromEmail(email: string) {
-  const local = email.split('@')[0].replace(/[._-]+/g, ' ')
-  return local.replace(/\b\w/g, (c) => c.toUpperCase())
-}
-
+// The session lives in an httpOnly cookie set by the API; this provider only
+// mirrors it. Better Auth refreshes `useSession` after sign-in, sign-out and
+// the other auth calls on its own.
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => read<User | null>(SESSION_KEY, null))
+  const session = authClient.useSession()
+  const { refetch } = session
+  const user = useMemo(() => (session.data ? toAuthUser(session.data.user) : null), [session.data])
 
-  const persist = useCallback((next: User | null) => {
-    setUser(next)
-    write(SESSION_KEY, next)
-    if (next) {
-      const accounts = read<Record<string, User>>(ACCOUNTS_KEY, {})
-      write(ACCOUNTS_KEY, { ...accounts, [next.email]: next })
-    }
+  const refresh = useCallback(async () => {
+    await refetch()
+  }, [refetch])
+
+  const signIn = useCallback<AuthValue['signIn']>(async (email, password) => {
+    const data = await authCall(() => authClient.signIn.email({ email, password }))
+    return 'twoFactorRedirect' in data && data.twoFactorRedirect ? 'two-factor' : 'ok'
   }, [])
 
-  const signIn = useCallback(
-    (email: string) => {
-      const known = read<Record<string, User>>(ACCOUNTS_KEY, {})[email]
-      persist(
-        known ?? {
-          name: nameFromEmail(email),
-          email,
-          plan: null,
-          memberSince: new Date().toISOString(),
-        },
-      )
-    },
-    [persist],
-  )
-
-  const signUp = useCallback(
-    (name: string, email: string) =>
-      persist({ name, email, plan: null, memberSince: new Date().toISOString() }),
-    [persist],
-  )
-
-  const signOut = useCallback(() => persist(null), [persist])
-
-  const forget = useCallback((email: string) => {
-    const accounts = read<Record<string, User>>(ACCOUNTS_KEY, {})
-    delete accounts[email]
-    write(ACCOUNTS_KEY, accounts)
+  const signUp = useCallback<AuthValue['signUp']>(async ({ name, email, password, locale }) => {
+    await authCall(() => authClient.signUp.email({ name, email, password, locale }))
   }, [])
 
-  const updateUser = useCallback(
-    (patch: Partial<User>) => {
-      if (!user) return
-      const next = { ...user, ...patch }
-      // A changed email moves the saved account instead of leaving a copy behind.
-      if (next.email !== user.email) forget(user.email)
-      persist(next)
+  const signOut = useCallback(async () => {
+    await authCall(() => authClient.signOut())
+  }, [])
+
+  const updateUser = useCallback<AuthValue['updateUser']>(
+    async (patch) => {
+      await apiFetch('/api/me', { method: 'PATCH', body: patch })
+      await refetch()
     },
-    [user, persist, forget],
+    [refetch],
   )
 
-  const deleteAccount = useCallback(() => {
-    if (user) forget(user.email)
-    persist(null)
-  }, [user, persist, forget])
+  // Better Auth re-reads the session by itself after sign-out and deletion.
+  const deleteAccount = useCallback(async (password: string) => {
+    await authCall(() => authClient.deleteUser({ password }))
+  }, [])
 
-  const value = useMemo(
-    () => ({ user, signIn, signUp, signOut, updateUser, deleteAccount }),
-    [user, signIn, signUp, signOut, updateUser, deleteAccount],
+  const value = useMemo<AuthValue>(
+    () => ({ user, loading: session.isPending, signIn, signUp, signOut, updateUser, deleteAccount, refresh }),
+    [user, session.isPending, signIn, signUp, signOut, updateUser, deleteAccount, refresh],
   )
 
   return <AuthContext value={value}>{children}</AuthContext>

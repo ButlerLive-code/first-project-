@@ -1,4 +1,3 @@
-import { startTransition } from 'react'
 import { Outlet } from 'react-router'
 import { LocalNavLink } from '../../i18n/LocalLink'
 import { useLocalNavigate } from '../../i18n/useLocalNavigate'
@@ -19,13 +18,14 @@ export function DashboardLayout() {
     { to: '/dashboard/settings', label: t.dashboard.tabs.settings },
   ]
 
-  function handleSignOut() {
-    // The router navigates inside a transition; signing out in the same
-    // transition keeps RequireAuth from redirecting to /signup first.
-    startTransition(() => {
+  async function handleSignOut() {
+    try {
+      await signOut()
+    } finally {
+      // Better Auth re-reads the session only after another request, so this
+      // navigation lands before RequireAuth could send us to /signup.
       navigate('/')
-      signOut()
-    })
+    }
   }
 
   return (

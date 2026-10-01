@@ -7,7 +7,7 @@ import logo from '../assets/logo.svg'
 
 export function Header() {
   const [open, setOpen] = useState(false)
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const t = useT()
   const links = [
     { label: t.header.about, to: '/#about' },
@@ -54,7 +54,7 @@ export function Header() {
           </ul>
         </nav>
         <div className="header-auth">
-          {user ? (
+          {loading ? null : user ? (
             <LocalLink to="/dashboard" className="btn header-signup" onClick={close}>
               {t.header.myAccount}
             </LocalLink>

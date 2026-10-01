@@ -172,7 +172,7 @@ export const ru: Dictionary = {
     email: 'Email',
     emailPlaceholder: 'you@example.com',
     password: 'Пароль',
-    passwordTooShort: 'Пароль должен содержать не менее 6 символов.',
+    passwordTooShort: 'Пароль должен содержать не менее 8 символов.',
   },
   login: {
     metaTitle: 'Вход',
@@ -190,7 +190,7 @@ export const ru: Dictionary = {
     subtitle: 'Присоединяйтесь к 90+ пользователям, которые безопасно работают в сети с LaslesVPN.',
     fullName: 'Полное имя',
     namePlaceholder: 'Иван Петров',
-    passwordPlaceholder: 'Не менее 6 символов',
+    passwordPlaceholder: 'Не менее 8 символов',
     agreeBefore: 'Я принимаю ',
     terms: 'Условия использования',
     agreeMiddle: ' и ',
@@ -391,7 +391,8 @@ export const ru: Dictionary = {
     },
     deleteTitle: 'Удаление аккаунта',
     deleteText:
-      'Это удалит ваш профиль, устройства и историю платежей из этого браузера и завершит сеанс. Отменить это действие нельзя.',
+      'Это навсегда удалит ваш профиль, устройства, подписку и историю платежей и завершит все сеансы. Отменить это действие нельзя.',
+    deletePassword: 'Ваш пароль',
     typeBefore: 'Введите ',
     deleteWord: 'УДАЛИТЬ',
     typeAfter: ', чтобы подтвердить',

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router'
+import { errorMessage } from '../api/errorMessage'
 import { LocalLink } from '../i18n/LocalLink'
 import { useLocalNavigate } from '../i18n/useLocalNavigate'
 import { safeNext } from '../auth/next'
@@ -15,19 +16,23 @@ export function Login() {
   const [params] = useSearchParams()
   const next = safeNext(params.get('next'))
   const [error, setError] = useState<Message>(null)
+  const [busy, setBusy] = useState(false)
   const [resetSent, setResetSent] = useState(false)
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const form = new FormData(e.currentTarget)
     const email = String(form.get('email')).trim()
     const password = String(form.get('password'))
-    if (password.length < 6) {
-      setError(message((t) => t.auth.passwordTooShort))
-      return
+    setBusy(true)
+    try {
+      const result = await signIn(email, password)
+      if (result === 'two-factor') navigate(`/login/2fa?next=${encodeURIComponent(next)}`, { replace: true })
+      else navigate(next, { replace: true })
+    } catch (err) {
+      setError(message((t) => errorMessage(t, err)))
+      setBusy(false)
     }
-    signIn(email)
-    navigate(next, { replace: true })
   }
 
   return (
@@ -39,7 +44,13 @@ export function Login() {
         <form className="form" onSubmit={handleSubmit}>
           <label className="field">
             <span>{t.auth.email}</span>
-            <input name="email" type="email" required autoComplete="email" placeholder={t.auth.emailPlaceholder} />
+            <input
+              name="email"
+              type="email"
+              required
+              autoComplete="email"
+              placeholder={t.auth.emailPlaceholder}
+            />
           </label>
           <label className="field">
             <span>{t.auth.password}</span>
@@ -57,7 +68,7 @@ export function Login() {
             {t.login.forgot}
           </button>
           {resetSent && <p className="form-note">{t.login.resetSent}</p>}
-          <button type="submit" className="btn btn-primary form-submit">
+          <button type="submit" className="btn btn-primary form-submit" disabled={busy}>
             {t.login.submit}
           </button>
         </form>

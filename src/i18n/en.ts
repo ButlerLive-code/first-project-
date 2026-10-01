@@ -173,7 +173,7 @@ export const en = {
     email: 'Email',
     emailPlaceholder: 'you@example.com',
     password: 'Password',
-    passwordTooShort: 'Password must be at least 6 characters.',
+    passwordTooShort: 'Password must be at least 8 characters.',
   },
   login: {
     metaTitle: 'Sign In',
@@ -191,7 +191,7 @@ export const en = {
     subtitle: 'Join 90+ users who browse safely with LaslesVPN.',
     fullName: 'Full name',
     namePlaceholder: 'Viezh Robert',
-    passwordPlaceholder: 'At least 6 characters',
+    passwordPlaceholder: 'At least 8 characters',
     agreeBefore: 'I agree to the ',
     terms: 'Terms of Service',
     agreeMiddle: ' and ',
@@ -392,7 +392,8 @@ export const en = {
     },
     deleteTitle: 'Delete account',
     deleteText:
-      "This removes your profile, devices and payment history from this browser and signs you out. It can't be undone.",
+      "This permanently removes your profile, devices, subscription and payment history and signs you out everywhere. It can't be undone.",
+    deletePassword: 'Your password',
     typeBefore: 'Type ',
     deleteWord: 'DELETE',
     typeAfter: ' to confirm',
