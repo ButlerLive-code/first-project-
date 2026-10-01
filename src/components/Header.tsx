@@ -54,7 +54,6 @@ export function Header() {
           </ul>
         </nav>
         <div className="header-auth">
-          <LanguageSwitcher onSwitch={close} />
           {user ? (
             <LocalLink to="/dashboard" className="btn header-signup" onClick={close}>
               {t.header.myAccount}
@@ -69,6 +68,7 @@ export function Header() {
               </LocalLink>
             </>
           )}
+          <LanguageSwitcher onSwitch={close} />
         </div>
       </div>
     </header>
