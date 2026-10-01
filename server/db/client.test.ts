@@ -1,7 +1,7 @@
 import { eq, sql } from 'drizzle-orm'
 import { afterAll, beforeAll, expect, it } from 'vitest'
 import { openDatabase, type Database } from './client.ts'
-import { device, payment, preferences, subscription, user } from './schema.ts'
+import { account, device, payment, preferences, session, subscription, twoFactor, user } from './schema.ts'
 
 let database: Database
 beforeAll(async () => {
@@ -52,10 +52,25 @@ it("deleting a user deletes all of the user's rows", async () => {
     cardLast4: '4242',
   })
   await db.insert(preferences).values({ userId: 'u1' })
+  await db.insert(session).values({
+    id: 's1',
+    userId: 'u1',
+    token: 'token-1',
+    expiresAt: new Date('2030-01-01'),
+    updatedAt: new Date(),
+  })
+  await db.insert(account).values({
+    id: 'a1',
+    userId: 'u1',
+    accountId: 'u1',
+    providerId: 'credential',
+    updatedAt: new Date(),
+  })
+  await db.insert(twoFactor).values({ id: 't1', userId: 'u1', secret: 'secret', backupCodes: '[]' })
 
   await db.delete(user).where(eq(user.id, 'u1'))
 
-  for (const table of [subscription, device, payment, preferences]) {
+  for (const table of [subscription, device, payment, preferences, session, account, twoFactor]) {
     expect(await db.select().from(table).where(eq(table.userId, 'u1'))).toEqual([])
   }
 })
