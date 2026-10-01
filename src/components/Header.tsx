@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { useAuth } from '../auth/useAuth'
+import { LanguageSwitcher } from '../i18n/LanguageSwitcher'
 import logo from '../assets/logo.svg'
 
 const links = [
@@ -47,6 +48,7 @@ export function Header() {
           </ul>
         </nav>
         <div className="header-auth">
+          <LanguageSwitcher onSwitch={close} />
           {user ? (
             <Link to="/dashboard" className="btn header-signup" onClick={close}>
               My Account

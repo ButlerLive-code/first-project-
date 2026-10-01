@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router'
 import { RequireAuth } from './auth/RequireAuth'
 import { privacy, terms } from './data/legal'
+import { LocaleProvider } from './i18n/LocaleProvider'
 import { Layout } from './layout/Layout'
 import { About } from './pages/About'
 import { Affiliate } from './pages/Affiliate'
@@ -32,52 +33,77 @@ import './App.css'
 import './pages/pages.css'
 import './pages/content.css'
 
+// The same pages are mounted twice: English at the root, Russian under /ru.
+function siteRoutes() {
+  return (
+    <>
+      <Route index element={<Home />} />
+      <Route path="login" element={<Login />} />
+      <Route path="signup" element={<Signup />} />
+      <Route
+        path="checkout"
+        element={
+          <RequireAuth>
+            <Checkout />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="dashboard"
+        element={
+          <RequireAuth>
+            <DashboardLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={<Overview />} />
+        <Route path="devices" element={<Devices />} />
+        <Route path="billing" element={<Billing />} />
+        <Route path="settings" element={<Settings />} />
+      </Route>
+      <Route path="download" element={<Download />} />
+      <Route path="locations" element={<Locations />} />
+      <Route path="servers" element={<Servers />} />
+      <Route path="countries" element={<Countries />} />
+      <Route path="countries/:slug" element={<Country />} />
+      <Route path="faq" element={<Faq />} />
+      <Route path="tutorials" element={<Tutorials />} />
+      <Route path="tutorials/:platform" element={<Tutorial />} />
+      <Route path="blog" element={<Blog />} />
+      <Route path="blog/:slug" element={<BlogPost />} />
+      <Route path="what-is-vpn" element={<WhatIsVpn />} />
+      <Route path="about" element={<About />} />
+      <Route path="help" element={<Help />} />
+      <Route path="affiliate" element={<Affiliate />} />
+      <Route path="partners" element={<Partners />} />
+      <Route path="privacy" element={<Legal key="privacy" doc={privacy} />} />
+      <Route path="terms" element={<Legal key="terms" doc={terms} />} />
+      <Route path="*" element={<NotFound />} />
+    </>
+  )
+}
+
 function App() {
   return (
     <Routes>
-      <Route element={<Layout />}>
-        <Route index element={<Home />} />
-        <Route path="login" element={<Login />} />
-        <Route path="signup" element={<Signup />} />
-        <Route
-          path="checkout"
-          element={
-            <RequireAuth>
-              <Checkout />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="dashboard"
-          element={
-            <RequireAuth>
-              <DashboardLayout />
-            </RequireAuth>
-          }
-        >
-          <Route index element={<Overview />} />
-          <Route path="devices" element={<Devices />} />
-          <Route path="billing" element={<Billing />} />
-          <Route path="settings" element={<Settings />} />
-        </Route>
-        <Route path="download" element={<Download />} />
-        <Route path="locations" element={<Locations />} />
-        <Route path="servers" element={<Servers />} />
-        <Route path="countries" element={<Countries />} />
-        <Route path="countries/:slug" element={<Country />} />
-        <Route path="faq" element={<Faq />} />
-        <Route path="tutorials" element={<Tutorials />} />
-        <Route path="tutorials/:platform" element={<Tutorial />} />
-        <Route path="blog" element={<Blog />} />
-        <Route path="blog/:slug" element={<BlogPost />} />
-        <Route path="what-is-vpn" element={<WhatIsVpn />} />
-        <Route path="about" element={<About />} />
-        <Route path="help" element={<Help />} />
-        <Route path="affiliate" element={<Affiliate />} />
-        <Route path="partners" element={<Partners />} />
-        <Route path="privacy" element={<Legal key="privacy" doc={privacy} />} />
-        <Route path="terms" element={<Legal key="terms" doc={terms} />} />
-        <Route path="*" element={<NotFound />} />
+      <Route
+        path="ru"
+        element={
+          <LocaleProvider locale="ru">
+            <Layout />
+          </LocaleProvider>
+        }
+      >
+        {siteRoutes()}
+      </Route>
+      <Route
+        element={
+          <LocaleProvider locale="en">
+            <Layout />
+          </LocaleProvider>
+        }
+      >
+        {siteRoutes()}
       </Route>
     </Routes>
   )

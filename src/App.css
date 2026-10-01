@@ -40,6 +40,30 @@
   font-weight: 500;
 }
 
+.lang-switch {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px;
+}
+
+.lang-switch a {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.lang-switch a:hover {
+  color: var(--navy);
+}
+
+.lang-switch a.is-active {
+  background: var(--red);
+  color: #fff;
+}
+
 .header-signup {
   width: 150px;
   height: 45px;
