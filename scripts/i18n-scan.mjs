@@ -14,9 +14,9 @@ const attributePatterns = [
   /\b(?:label|title|text|description|placeholder|q|a):\s*'([^']*[A-Za-z][^']*)'/g,
 ]
 // Code patterns to skip JSX text
-const codePatterns = [/=>/, /&&/, /\|\|/, /===/, /!==/, / = /, /;/, /\bimport\b/, /\bexport\b/, /\bfrom\b/, /\brequire\b/, /\bconst\b/, /\blet\b/, /\bvar\b/, /\bfunction\b/, /`/, /\$\{/, /\)\s*[}>\]]/, /\w+\(/]
+const codePatterns = [/=>/, /&&/, /\|\|/, /===/, /!==/, / = /, /;/, /\bimport\b/, /\bexport\b/, /\bfrom\b/, /\brequire\b/, /\bconst\b/, /\blet\b/, /\bvar\b/, /\bfunction\b/, /`/, /\$\{/, /\)\s*[}>\]]/, /\w+\(/, /\w+=\s*(["{[]|$)/]
 // Operators that text shouldn't start with (check after trim)
-const startOpChars = /^[=&|?:)(,.]/
+const startOpChars = /^[=&|?:)(,.>]/
 
 export function scanSource(code) {
   const findings = []
