@@ -5,6 +5,9 @@ import { newId } from '../auth/account'
 import type { Billing } from '../auth/context'
 import { useAuth } from '../auth/useAuth'
 import { useT } from '../i18n/useT'
+import { useLocale } from '../i18n/useLocale'
+import { usePageMeta } from '../i18n/usePageMeta'
+import { formatPrice } from '../i18n/format'
 import { getPlan, plans, type PlanId } from '../data/plans'
 import { cardBrand, formatCardNumber, formatExpiry, isExpiryValid } from '../utils/card'
 
@@ -14,6 +17,8 @@ const YEARLY_MONTHS = 10
 export function Checkout() {
   const { user, updateUser } = useAuth()
   const t = useT()
+  const locale = useLocale()
+  usePageMeta(t.checkout.metaTitle)
   const navigate = useLocalNavigate()
   const [params, setParams] = useSearchParams()
   const plan = getPlan(params.get('plan')) ?? getPlan(user?.plan) ?? plans[1]
@@ -49,9 +54,9 @@ export function Checkout() {
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (!isFree) {
-      if (card.number.replace(/\s/g, '').length !== 16) return setError('Enter a 16-digit card number.')
-      if (!isExpiryValid(card.expiry)) return setError('Enter a valid expiry date (MM/YY).')
-      if (card.cvc.length < 3) return setError('Enter the 3–4 digit CVC.')
+      if (card.number.replace(/\s/g, '').length !== 16) return setError(t.checkout.errors.cardNumber)
+      if (!isExpiryValid(card.expiry)) return setError(t.checkout.errors.expiry)
+      if (card.cvc.length < 3) return setError(t.checkout.errors.cvc)
     }
     setProcessing(true)
     // Simulated payment round-trip. Card details never leave this component.
@@ -74,15 +79,17 @@ export function Checkout() {
 
   return (
     <section className="checkout container">
-      <h1 className="section-title">Complete your order</h1>
+      <h1 className="section-title">{t.checkout.title}</h1>
       <p className="checkout-subtitle">
-        Signed in as <b>{user?.email}</b>. You can change or cancel your plan at any time.
+        {t.checkout.signedInBefore}
+        <b>{user?.email}</b>
+        {t.checkout.signedInAfter}
       </p>
 
       <form className="checkout-grid" onSubmit={handleSubmit}>
         <div className="checkout-main">
           <fieldset className="checkout-step">
-            <legend>1. Choose a plan</legend>
+            <legend>{t.checkout.stepPlan}</legend>
             <div className="plan-options">
               {plans.map((p) => (
                 <label key={p.id} className={`plan-option${p.id === plan.id ? ' is-active' : ''}`}>
@@ -96,9 +103,9 @@ export function Checkout() {
                   <img src={p.image} alt="" width={56} height={64} />
                   <span className="plan-option-name">{t.plans[p.id].name}</span>
                   <span className="plan-option-price">
-                    {p.price === 0 ? 'Free' : `$${p.price} / mo`}
+                    {p.price === 0 ? t.pricing.free : `${formatPrice(p.price, locale)} ${t.pricing.perMonth}`}
                   </span>
-                  {user?.plan === p.id && <span className="badge">Current</span>}
+                  {user?.plan === p.id && <span className="badge">{t.checkout.current}</span>}
                 </label>
               ))}
             </div>
@@ -106,7 +113,7 @@ export function Checkout() {
 
           {!isFree && (
             <fieldset className="checkout-step">
-              <legend>2. Billing period</legend>
+              <legend>{t.checkout.stepBilling}</legend>
               <div className="segmented">
                 {(['monthly', 'yearly'] as const).map((b) => (
                   <label key={b} className={billing === b ? 'is-active' : ''}>
@@ -117,7 +124,7 @@ export function Checkout() {
                       checked={billing === b}
                       onChange={() => setBilling(b)}
                     />
-                    {b === 'monthly' ? 'Monthly' : 'Yearly · 2 months free'}
+                    {b === 'monthly' ? t.checkout.monthly : t.checkout.yearly}
                   </label>
                 ))}
               </div>
@@ -126,17 +133,17 @@ export function Checkout() {
 
           {!isFree && (
             <fieldset className="checkout-step">
-              <legend>3. Payment details</legend>
+              <legend>{t.checkout.stepPayment}</legend>
               <p className="demo-note">
-                Demo checkout — no payment is processed. Only the card brand and last four digits are kept in this browser.
+                {t.checkout.demoNote}
               </p>
               <div className="form">
                 <label className="field">
-                  <span>Name on card</span>
+                  <span>{t.checkout.nameOnCard}</span>
                   <input name="name" required autoComplete="cc-name" value={card.name} onChange={handleCard} />
                 </label>
                 <label className="field">
-                  <span>Card number</span>
+                  <span>{t.checkout.cardNumber}</span>
                   <input
                     name="number"
                     required
@@ -149,19 +156,19 @@ export function Checkout() {
                 </label>
                 <div className="field-row">
                   <label className="field">
-                    <span>Expiry</span>
+                    <span>{t.checkout.expiry}</span>
                     <input
                       name="expiry"
                       required
                       inputMode="numeric"
                       autoComplete="cc-exp"
-                      placeholder="MM/YY"
+                      placeholder={t.checkout.expiryPlaceholder}
                       value={card.expiry}
                       onChange={handleCard}
                     />
                   </label>
                   <label className="field">
-                    <span>CVC</span>
+                    <span>{t.checkout.cvc}</span>
                     <input
                       name="cvc"
                       required
@@ -179,12 +186,12 @@ export function Checkout() {
         </div>
 
         <aside className="summary">
-          <h2 className="summary-title">Order summary</h2>
+          <h2 className="summary-title">{t.checkout.summary}</h2>
           <div className="summary-plan">
             <img src={plan.image} alt="" width={72} height={82} />
             <div>
               <p className="summary-plan-name">{t.plans[plan.id].name}</p>
-              <p>{isFree ? 'Free forever' : billing === 'monthly' ? 'Billed monthly' : 'Billed yearly'}</p>
+              <p>{isFree ? t.checkout.freeForever : billing === 'monthly' ? t.checkout.billedMonthly : t.checkout.billedYearly}</p>
             </div>
           </div>
           <ul className="plan-perks summary-perks">
@@ -194,23 +201,23 @@ export function Checkout() {
           </ul>
           {billing === 'yearly' && !isFree && (
             <p className="summary-line">
-              <span>Discount</span>
-              <span className="summary-discount">−${plan.price * 2}</span>
+              <span>{t.checkout.discount}</span>
+              <span className="summary-discount">−{formatPrice(plan.price * 2, locale)}</span>
             </p>
           )}
           <p className="summary-line summary-total">
-            <span>Total today</span>
-            <span>${total}</span>
+            <span>{t.checkout.totalToday}</span>
+            <span>{formatPrice(total, locale)}</span>
           </p>
           {error && <p className="form-error">{error}</p>}
           <button type="submit" className="btn btn-primary form-submit" disabled={processing || isCurrent}>
             {processing
-              ? 'Processing…'
+              ? t.checkout.processing
               : isCurrent
-                ? 'This is your current plan'
+                ? t.checkout.currentPlan
                 : isFree
-                  ? 'Activate Free Plan'
-                  : `Pay $${total}`}
+                  ? t.checkout.activateFree
+                  : t.checkout.pay(formatPrice(total, locale))}
           </button>
         </aside>
       </form>
