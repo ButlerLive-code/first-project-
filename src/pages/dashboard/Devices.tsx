@@ -3,7 +3,7 @@ import { LocalLink } from '../../i18n/LocalLink'
 import { formatDate, getDevices, newId } from '../../auth/account'
 import type { Device } from '../../auth/context'
 import { useAuth } from '../../auth/useAuth'
-import { getPlatform, platforms } from '../../data/platforms'
+import { getPlatform, getPlatforms } from '../../data/platforms'
 import { useLocale } from '../../i18n/useLocale'
 import { usePageMeta } from '../../i18n/usePageMeta'
 import { useT } from '../../i18n/useT'
@@ -13,6 +13,7 @@ export function Devices() {
   const { user, updateUser } = useAuth()
   const t = useT()
   const locale = useLocale()
+  const platforms = getPlatforms(locale)
   usePageMeta(t.devices.metaTitle)
   const [added, setAdded] = useState<Device | null>(null)
 
@@ -33,7 +34,7 @@ export function Devices() {
     const form = e.currentTarget
     const data = new FormData(form)
     const platform = String(data.get('platform'))
-    const name = String(data.get('name')).trim() || t.devices.defaultName(getPlatform(platform)?.name)
+    const name = String(data.get('name')).trim() || t.devices.defaultName(getPlatform(platform, locale)?.name)
     const device = { id: newId('DEV'), name, platform, addedAt: new Date().toISOString() }
     save([...devices, device])
     setAdded(device)
@@ -72,7 +73,7 @@ export function Devices() {
 
       <ul className="device-list">
         {devices.map((device) => {
-          const platform = getPlatform(device.platform)
+          const platform = getPlatform(device.platform, locale)
           return (
             <li key={device.id} className="card device">
               <span className="device-icon" aria-hidden="true">
@@ -139,7 +140,7 @@ export function Devices() {
           <p className="form-note" role="status">
             <b>{added.name}</b>
             {t.devices.addedAfter}
-            <LocalLink to={`/tutorials/${added.platform}`}>{t.devices.setupGuide(getPlatform(added.platform)?.name ?? '')}</LocalLink>
+            <LocalLink to={`/tutorials/${added.platform}`}>{t.devices.setupGuide(getPlatform(added.platform, locale)?.name ?? '')}</LocalLink>
           </p>
         )}
       </div>

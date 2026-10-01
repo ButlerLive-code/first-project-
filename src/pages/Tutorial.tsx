@@ -1,20 +1,31 @@
 import { useParams } from 'react-router'
 import { LocalLink } from '../i18n/LocalLink'
 import { PageHeader } from '../components/PageHeader'
-import { getPlatform, platforms } from '../data/platforms'
+import { getPlatform, getPlatforms, type Platform } from '../data/platforms'
+import { useLocale } from '../i18n/useLocale'
+import { usePageMeta } from '../i18n/usePageMeta'
+import { useT } from '../i18n/useT'
 import { NotFound } from './NotFound'
 
 export function Tutorial() {
   const { platform: id } = useParams()
-  const platform = getPlatform(id)
+  const locale = useLocale()
+  const platform = getPlatform(id, locale)
   if (!platform) return <NotFound />
+  return <TutorialGuide platform={platform} />
+}
 
-  const others = platforms.filter((p) => p.id !== platform.id)
+// Split out so the page meta hook only runs for a platform that exists.
+function TutorialGuide({ platform }: { platform: Platform }) {
+  const t = useT()
+  const locale = useLocale()
+  usePageMeta(t.tutorial.metaTitle(platform.name))
+  const others = getPlatforms(locale).filter((p) => p.id !== platform.id)
 
   return (
     <>
-      <PageHeader eyebrow="Tutorials" title={`How to set up LaslesVPN on ${platform.name}`}>
-        {platform.requirements} · Version {platform.version}
+      <PageHeader eyebrow={t.tutorial.eyebrow} title={t.tutorial.title(platform.name)}>
+        {t.tutorial.meta(platform.requirements, platform.version)}
       </PageHeader>
 
       <section className="container page-section tutorial">
@@ -31,7 +42,7 @@ export function Tutorial() {
             ))}
           </ol>
 
-          <h2 className="subheading">Troubleshooting</h2>
+          <h2 className="subheading">{t.tutorial.troubleshooting}</h2>
           <div className="accordion">
             {platform.troubleshooting.map((t) => (
               <details key={t.problem} className="accordion-item">
@@ -46,15 +57,16 @@ export function Tutorial() {
           <span className="platform-icon" aria-hidden="true">
             {platform.icon}
           </span>
-          <h2 className="card-title">Ready to install?</h2>
+          <h2 className="card-title">{t.tutorial.ready}</h2>
           <LocalLink to="/download" className="btn btn-primary">
-            Download for {platform.name}
+            {t.tutorial.downloadFor(platform.name)}
           </LocalLink>
           <p className="form-note">
-            Need help? <LocalLink to="/faq">Read the FAQ</LocalLink>
+            {t.tutorial.needHelp}
+            <LocalLink to="/faq">{t.tutorial.readFaq}</LocalLink>
           </p>
           <hr />
-          <p className="aside-label">Other platforms</p>
+          <p className="aside-label">{t.tutorial.others}</p>
           <ul className="aside-links">
             {others.map((p) => (
               <li key={p.id}>

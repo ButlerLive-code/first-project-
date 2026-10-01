@@ -2,12 +2,19 @@ import { useState } from 'react'
 import { LocalLink } from '../i18n/LocalLink'
 import { useAuth } from '../auth/useAuth'
 import { PageHeader } from '../components/PageHeader'
-import { detectPlatform, platforms, type Platform } from '../data/platforms'
+import { detectPlatform, getPlatforms, type Platform } from '../data/platforms'
+import { useLocale } from '../i18n/useLocale'
+import { usePageMeta } from '../i18n/usePageMeta'
+import { useT } from '../i18n/useT'
 
 const isStore = (p: Platform) => p.id === 'ios' || p.id === 'android'
 
 export function Download() {
+  const t = useT()
+  const locale = useLocale()
+  usePageMeta(t.download.metaTitle)
   const { user } = useAuth()
+  const platforms = getPlatforms(locale)
   const [detected] = useState(detectPlatform)
   const [started, setStarted] = useState<Platform | null>(null)
   // Highlight follows the pointer/keyboard focus and falls back to the detected platform.
@@ -17,9 +24,8 @@ export function Download() {
 
   return (
     <>
-      <PageHeader eyebrow="Download" title="Get LaslesVPN on every device">
-        One account protects up to 6 devices. Pick your platform and you'll be connected in under
-        a minute.
+      <PageHeader eyebrow={t.download.eyebrow} title={t.download.title}>
+        {t.download.text}
       </PageHeader>
 
       <section className="container page-section">
@@ -28,28 +34,36 @@ export function Download() {
             <span>
               {isStore(started) ? (
                 <>
-                  Opening <b>{started.file}</b> (demo) — search for “LaslesVPN” to install.
+                  {t.download.storeBefore}
+                  <b>{started.file}</b>
+                  {t.download.storeAfter}
                 </>
               ) : (
                 <>
-                  Your download of <b>{started.file}</b> would start now (demo).
+                  {t.download.fileBefore}
+                  <b>{started.file}</b>
+                  {t.download.fileAfter}
                 </>
               )}{' '}
-              Next: <LocalLink to={`/tutorials/${started.id}`}>follow the {started.name} setup guide</LocalLink>
+              {t.download.next}{' '}
+              <LocalLink to={`/tutorials/${started.id}`}>{t.download.followGuide(started.name)}</LocalLink>
               {user ? (
                 <>
                   {' '}
-                  and connect from <LocalLink to="/dashboard">your dashboard</LocalLink>.
+                  {t.download.connectBefore}
+                  <LocalLink to="/dashboard">{t.download.dashboardLink}</LocalLink>
+                  {t.download.connectAfter}
                 </>
               ) : (
                 <>
                   {' '}
-                  and <LocalLink to="/signup?next=%2Fdashboard">create your free account</LocalLink> to sign
-                  in.
+                  {t.download.signUpBefore}
+                  <LocalLink to="/signup?next=%2Fdashboard">{t.download.signUpLink}</LocalLink>
+                  {t.download.signUpAfter}
                 </>
               )}
             </span>
-            <button type="button" aria-label="Dismiss" onClick={() => setStarted(null)}>
+            <button type="button" aria-label={t.common.dismiss} onClick={() => setStarted(null)}>
               ×
             </button>
           </div>
@@ -69,13 +83,13 @@ export function Download() {
               onMouseEnter={() => setHovered(p.id)}
               onFocus={() => setHovered(p.id)}
             >
-              {p.id === detected && <span className="badge">Recommended for you</span>}
+              {p.id === detected && <span className="badge">{t.download.recommended}</span>}
               <span className="platform-icon" aria-hidden="true">
                 {p.icon}
               </span>
               <h2 className="card-title">{p.name}</h2>
               <p className="platform-meta">
-                Version {p.version} · {p.size}
+                {t.download.version(p.version)} · {p.size}
                 <br />
                 {p.requirements}
               </p>
@@ -84,10 +98,10 @@ export function Download() {
                 className={`btn ${p.id === active ? 'btn-primary' : 'btn-outline'}`}
                 onClick={() => setStarted(p)}
               >
-                {isStore(p) ? p.file : 'Download'}
+                {isStore(p) ? p.file : t.download.download}
               </button>
               <LocalLink to={`/tutorials/${p.id}`} className="platform-guide">
-                Setup guide →
+                {t.download.setupGuide}
               </LocalLink>
             </li>
           ))}
@@ -95,9 +109,9 @@ export function Download() {
 
         {!user && (
           <div className="notice page-cta">
-            <p>You'll need a LaslesVPN account to sign in to the app — it's free to start.</p>
+            <p>{t.download.needAccount}</p>
             <LocalLink to="/signup?next=%2Fdashboard" className="btn btn-primary">
-              Create Free Account
+              {t.download.createFree}
             </LocalLink>
           </div>
         )}

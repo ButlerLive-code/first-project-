@@ -1,12 +1,19 @@
 import { LocalLink } from '../i18n/LocalLink'
 import { PageHeader } from '../components/PageHeader'
-import { platforms } from '../data/platforms'
+import { getPlatforms } from '../data/platforms'
+import { useLocale } from '../i18n/useLocale'
+import { usePageMeta } from '../i18n/usePageMeta'
+import { useT } from '../i18n/useT'
 
 export function Tutorials() {
+  const t = useT()
+  const locale = useLocale()
+  usePageMeta(t.tutorials.metaTitle)
+  const platforms = getPlatforms(locale)
   return (
     <>
-      <PageHeader eyebrow="Tutorials" title="Setup guides for every platform">
-        Step-by-step instructions to install LaslesVPN, sign in and get protected.
+      <PageHeader eyebrow={t.tutorials.eyebrow} title={t.tutorials.title}>
+        {t.tutorials.text}
       </PageHeader>
 
       <section className="container page-section">
@@ -17,17 +24,17 @@ export function Tutorials() {
                 <span className="platform-icon" aria-hidden="true">
                   {p.icon}
                 </span>
-                <span className="card-title">LaslesVPN for {p.name}</span>
-                <span>{p.steps.length} steps · about 2 minutes</span>
+                <span className="card-title">{t.tutorials.cardTitle(p.name)}</span>
+                <span>{t.tutorials.cardMeta(p.steps.length)}</span>
               </LocalLink>
             </li>
           ))}
         </ul>
 
         <div className="notice page-cta">
-          <p>Stuck on something that isn't covered here?</p>
+          <p>{t.tutorials.stuck}</p>
           <LocalLink to="/faq" className="btn btn-primary">
-            Browse the FAQ
+            {t.tutorials.browseFaq}
           </LocalLink>
         </div>
       </section>

@@ -184,7 +184,7 @@ export function Overview() {
             {devices.slice(0, 3).map((device) => (
               <li key={device.id}>
                 <span>
-                  {getPlatform(device.platform)?.icon} {device.name}
+                  {getPlatform(device.platform, locale)?.icon} {device.name}
                 </span>
                 {device.current && <span className="badge badge-green">{t.common.thisDevice}</span>}
               </li>
