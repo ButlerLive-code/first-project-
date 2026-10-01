@@ -1,13 +1,16 @@
+import { useState } from 'react'
 import { Outlet } from 'react-router'
 import { LocalNavLink } from '../../i18n/LocalLink'
 import { useLocalNavigate } from '../../i18n/useLocalNavigate'
-import { useT } from '../../i18n/useT'
+import { errorMessage } from '../../api/errorMessage'
+import { message, useT, type Message } from '../../i18n/useT'
 import { useAuth } from '../../auth/useAuth'
 
 export function DashboardLayout() {
   const { user, signOut } = useAuth()
   const navigate = useLocalNavigate()
   const t = useT()
+  const [error, setError] = useState<Message>(null)
 
   if (!user) return null
 
@@ -19,12 +22,14 @@ export function DashboardLayout() {
   ]
 
   async function handleSignOut() {
+    setError(null)
     try {
       await signOut()
-    } finally {
-      // Better Auth re-reads the session only after another request, so this
-      // navigation lands before RequireAuth could send us to /signup.
+      // signOut sets `leaving`, so RequireAuth sends us home, not to /signup,
+      // if the emptied session lands before this navigation commits.
       navigate('/')
+    } catch (err) {
+      setError(message((t) => errorMessage(t, err)))
     }
   }
 
@@ -39,6 +44,12 @@ export function DashboardLayout() {
           {t.dashboard.signOut}
         </button>
       </div>
+
+      {error && (
+        <p className="form-error" role="alert">
+          {error(t)}
+        </p>
+      )}
 
       <nav className="dashboard-tabs" aria-label={t.dashboard.navLabel}>
         {tabs.map((tab) => (

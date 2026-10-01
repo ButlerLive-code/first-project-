@@ -1,4 +1,4 @@
-import { useCallback, useMemo, type ReactNode } from 'react'
+import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { apiFetch } from '../api/client'
 import type { Role } from '../../shared/api'
 import { authCall } from './authCall'
@@ -26,6 +26,11 @@ function toAuthUser(user: SessionUser): AuthUser {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const session = authClient.useSession()
   const { refetch } = session
+  // Better Auth flips isPending on every background refetch (window focus), so
+  // "loading" means only the very first session check.
+  const [ready, setReady] = useState(false)
+  if (!session.isPending && !ready) setReady(true)
+  const [leaving, setLeaving] = useState(false)
   const user = useMemo(() => (session.data ? toAuthUser(session.data.user) : null), [session.data])
 
   const refresh = useCallback(async () => {
@@ -34,15 +39,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback<AuthValue['signIn']>(async (email, password) => {
     const data = await authCall(() => authClient.signIn.email({ email, password }))
-    return 'twoFactorRedirect' in data && data.twoFactorRedirect ? 'two-factor' : 'ok'
-  }, [])
+    if ('twoFactorRedirect' in data && data.twoFactorRedirect) return 'two-factor'
+    // The client updates the session store only after a delayed GET /get-session;
+    // wait for it so the caller's navigation does not meet a still-empty user.
+    await refetch()
+    setLeaving(false)
+    return 'ok'
+  }, [refetch])
 
   const signUp = useCallback<AuthValue['signUp']>(async ({ name, email, password, locale }) => {
     await authCall(() => authClient.signUp.email({ name, email, password, locale }))
-  }, [])
+    await refetch()
+    setLeaving(false)
+  }, [refetch])
 
   const signOut = useCallback(async () => {
     await authCall(() => authClient.signOut())
+    setLeaving(true)
   }, [])
 
   const updateUser = useCallback<AuthValue['updateUser']>(
@@ -53,14 +66,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [refetch],
   )
 
-  // Better Auth re-reads the session by itself after sign-out and deletion.
+  // The session store is emptied by Better Auth a moment later (delayed
+  // /get-session); `leaving` keeps RequireAuth from redirecting to /signup meanwhile.
   const deleteAccount = useCallback(async (password: string) => {
     await authCall(() => authClient.deleteUser({ password }))
+    setLeaving(true)
   }, [])
 
   const value = useMemo<AuthValue>(
-    () => ({ user, loading: session.isPending, signIn, signUp, signOut, updateUser, deleteAccount, refresh }),
-    [user, session.isPending, signIn, signUp, signOut, updateUser, deleteAccount, refresh],
+    () => ({ user, loading: !ready, leaving, signIn, signUp, signOut, updateUser, deleteAccount, refresh }),
+    [user, ready, leaving, signIn, signUp, signOut, updateUser, deleteAccount, refresh],
   )
 
   return <AuthContext value={value}>{children}</AuthContext>

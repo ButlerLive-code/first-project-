@@ -19,8 +19,8 @@ export function DeleteAccountCard() {
     setError(null)
     try {
       await deleteAccount(password)
-      // The session is re-read only after another request, so this navigation
-      // lands before RequireAuth could send the visitor to /signup.
+      // deleteAccount sets `leaving`, so RequireAuth sends the visitor home
+      // rather than to /signup while the session store catches up.
       navigate('/', { replace: true })
     } catch (err) {
       setError(message((t) => errorMessage(t, err)))

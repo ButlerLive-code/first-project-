@@ -17,6 +17,8 @@ export function RequireAuth({ children }: { children: ReactNode }) {
           {t.common.loading}
         </p>
       )
+    case 'home':
+      return <LocalNavigate to="/" replace />
     case 'redirect': {
       const next = location.pathname + location.search
       return <LocalNavigate to={`/signup?next=${encodeURIComponent(next)}`} replace />

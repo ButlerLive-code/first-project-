@@ -20,3 +20,12 @@ it('a thrown call or a better-fetch fetch error is network', async () => {
     code: 'network',
   })
 })
+
+it('an unknown error code is server_error', async () => {
+  const call = async () => ({ data: null, error: { status: 400, statusText: 'Bad Request', error: { code: 'weird' } } })
+  await expect(authCall(call)).rejects.toMatchObject({ code: 'server_error', status: 400 })
+})
+
+it('a success without a body is server_error', async () => {
+  await expect(authCall(async () => ({ data: null, error: null }))).rejects.toMatchObject({ code: 'server_error' })
+})
