@@ -43,6 +43,11 @@ describe('apiFetch', () => {
     await expect(apiFetch('/api/x')).rejects.toMatchObject({ code: 'server_error', status: 502 })
   })
 
+  it('a 2xx response with a non-JSON body is server_error', async () => {
+    mockFetch(async () => new Response('<html>Welcome</html>', { status: 200 }))
+    await expect(apiFetch('/api/x')).rejects.toMatchObject({ code: 'server_error', status: 200 })
+  })
+
   it('a failed connection is network', async () => {
     mockFetch(async () => {
       throw new TypeError('Failed to fetch')

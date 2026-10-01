@@ -45,11 +45,14 @@ export async function apiFetch<T>(path: string, { method = 'GET', body }: ApiOpt
   }
   if (res.status === 204) return undefined as T
   let data: unknown = null
+  let parsed = true
   try {
     data = await res.json()
   } catch {
-    // An empty or non-JSON body: the status decides below.
+    // An empty or non-JSON body: an error status decides below.
+    parsed = false
   }
   if (!res.ok) throw errorFromBody(res.status, data)
+  if (!parsed) throw new ApiError('server_error', res.status)
   return data as T
 }
