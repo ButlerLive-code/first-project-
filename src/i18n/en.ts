@@ -1,6 +1,7 @@
 // English UI strings. ru.ts must provide exactly the same keys: the build
 // fails on a missing or extra one. Values are strings or small functions
 // for strings that embed numbers or names.
+import type { ErrorCode } from '../../shared/api'
 import type { PlanId } from '../data/plans'
 import type { Region } from '../data/servers'
 import { plural } from './plural'
@@ -23,7 +24,28 @@ export const en = {
     choosePlan: 'Choose a Plan',
     thisDevice: 'This device',
     pricePerMonth: (price: string) => `${price} / month`,
+    loading: 'Loading…',
+    retry: 'Try Again',
   },
+  // One message per API error code (shared/api.ts) plus 'network'.
+  errors: {
+    invalid_credentials: 'Wrong email or password.',
+    email_not_verified: 'Confirm your email first: open the link we sent you.',
+    account_banned: 'This account is blocked. If you think this is a mistake, contact support.',
+    token_expired: 'This link has expired. Please request a new one.',
+    token_invalid: 'This link is invalid or has already been used.',
+    weak_password: 'Use at least 8 characters for the password.',
+    email_taken: 'An account with this email already exists.',
+    device_limit: 'Your plan has no free device slots left.',
+    card_declined: 'The card was declined. Try another card.',
+    validation_failed: 'Some fields are filled in incorrectly. Check the form and try again.',
+    rate_limited: 'Too many attempts. Wait a minute and try again.',
+    unauthorized: 'Your session has ended. Please sign in again.',
+    forbidden: "You don't have access to this.",
+    not_found: 'Nothing was found.',
+    server_error: 'Something went wrong on our side. Please try again.',
+    network: "Can't reach the server. Check your internet connection.",
+  } satisfies Record<ErrorCode | 'network', string>,
   header: {
     menu: 'Menu',
     about: 'About',
