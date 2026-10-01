@@ -2,6 +2,7 @@
 // fails on a missing or extra one. Values are strings or small functions
 // for strings that embed numbers or names.
 import type { PlanId } from '../data/plans'
+import type { Region } from '../data/servers'
 import { plural } from './plural'
 
 export const en = {
@@ -375,6 +376,81 @@ export const en = {
     deleteWord: 'DELETE',
     typeAfter: ' to confirm',
     deleteButton: 'Delete My Account',
+  },
+  regions: {
+    americas: 'Americas',
+    europe: 'Europe',
+    apac: 'Asia Pacific',
+    mea: 'Africa & Middle East',
+  } satisfies Record<Region, string>,
+  servers: {
+    metaTitle: 'Servers',
+    eyebrow: 'Servers',
+    title: 'Live server status',
+    textBefore: 'Pick a server with low ping and load for the fastest connection. Premium servers are unlocked with the ',
+    premiumPlan: 'Premium plan',
+    textAfter: '.',
+    searchPlaceholder: 'Search city or country…',
+    searchLabel: 'Search servers',
+    regionLabel: 'Region',
+    allRegions: 'All regions',
+    sortLabel: 'Sort by',
+    sortPing: 'Sort by ping',
+    sortLoad: 'Sort by load',
+    sortCountry: 'Sort by country',
+    freeOnly: 'Free only',
+    empty: 'No servers match your filters.',
+    colLocation: 'Location',
+    colRegion: 'Region',
+    colPing: 'Ping',
+    colLoad: 'Load',
+    colPlan: 'Plan',
+    colAction: 'Action',
+    ping: (ms: number) => `${ms} ms`,
+    premium: 'Premium',
+    free: 'Free',
+    connect: 'Connect',
+    upgrade: 'Upgrade',
+  },
+  countries: {
+    metaTitle: 'Countries',
+    eyebrow: 'Countries',
+    title: (n: number) => `LaslesVPN in ${n} ${plural('en', n, { one: 'country', other: 'countries' })}`,
+    text: 'Get a local IP address wherever you need one. Free locations are marked — everything else is included in Premium.',
+    searchPlaceholder: 'Search countries…',
+    searchLabel: 'Search countries',
+    empty: (query: string) => `No countries match “${query}”.`,
+    summary: (n: number, ms: number) =>
+      `${n} ${plural('en', n, { one: 'server', other: 'servers' })} · from ${ms} ms`,
+    free: 'Free',
+  },
+  country: {
+    metaTitle: (name: string) => `VPN in ${name}`,
+    title: (flag: string, name: string) => `${flag} VPN in ${name}`,
+    text: (name: string, n: number, ms: number) =>
+      `Browse with a ${name} IP address on ${n} ${plural('en', n, { one: 'server', other: 'servers' })}. Fastest ping: ${ms} ms.`,
+    premium: 'Premium',
+    allPlans: 'Available on all plans',
+    ping: 'Ping',
+    load: 'Load',
+    connectTo: (city: string) => `Connect to ${city}`,
+    otherIn: (region: string) => `Other locations in ${region}`,
+    allCountries: '← All Countries',
+  },
+  locations: {
+    metaTitle: 'Locations',
+    eyebrow: 'Locations',
+    title: 'Huge Global Network of Fast VPN',
+    text: (servers: number, countries: number, regions: number) =>
+      `${servers} ${plural('en', servers, { one: 'server', other: 'servers' })} in ${countries} ${plural('en', countries, { one: 'country', other: 'countries' })} across ${regions} ${plural('en', regions, { one: 'region', other: 'regions' })} — pick the location closest to you for the best speed.`,
+    mapAlt: 'Map of LaslesVPN server locations',
+    statServers: 'Servers',
+    statCountries: 'Countries',
+    statFree: 'Free locations',
+    regionSummary: (servers: number, countries: number) =>
+      `${servers} ${plural('en', servers, { one: 'server', other: 'servers' })} · ${countries} ${plural('en', countries, { one: 'country', other: 'countries' })}`,
+    seeAll: 'See All Servers',
+    browse: 'Browse Countries',
   },
   notFound: {
     metaTitle: 'Page not found',

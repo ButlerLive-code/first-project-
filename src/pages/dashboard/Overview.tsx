@@ -9,7 +9,7 @@ import { useLocale } from '../../i18n/useLocale'
 import { usePageMeta } from '../../i18n/usePageMeta'
 import { useT } from '../../i18n/useT'
 import { getPlan } from '../../data/plans'
-import { servers } from '../../data/servers'
+import { placeName, servers } from '../../data/servers'
 
 // Links in the same order as t.overview.quickLinks.
 const quickLinkTargets = ['/download', '/tutorials', '/faq', '/help#contact']
@@ -127,7 +127,7 @@ export function Overview() {
             <select value={serverId} onChange={(e) => changeServer(e.target.value)}>
               {servers.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.flag} {s.city}, {s.country} — {s.ping} {t.overview.ms}
+                  {s.flag} {placeName(s.city, locale)}, {placeName(s.country, locale)} — {s.ping} {t.overview.ms}
                   {s.premium ? ` · ${t.overview.premium}` : ''}
                 </option>
               ))}
