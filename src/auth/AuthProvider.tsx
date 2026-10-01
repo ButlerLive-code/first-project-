@@ -80,8 +80,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // The session store is emptied by Better Auth a moment later (delayed
   // /get-session); `leavingFrom` keeps RequireAuth from redirecting to /signup meanwhile.
-  const deleteAccount = useCallback(async (password: string) => {
-    await authCall(() => authClient.deleteUser({ password }))
+  const deleteAccount = useCallback(async (password?: string) => {
+    // No password for a Google-only user: Better Auth checks the session is fresh instead.
+    await authCall(() => authClient.deleteUser(password ? { password } : {}))
     setLeavingFrom(window.location.pathname)
   }, [])
 

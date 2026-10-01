@@ -173,6 +173,10 @@ export const ru: Dictionary = {
     emailPlaceholder: 'you@example.com',
     password: 'Пароль',
     passwordTooShort: 'Пароль должен содержать не менее 8 символов.',
+    google: 'Продолжить с Google',
+    or: 'или',
+    googleCancelled: 'Вход через Google отменён. Попробуйте ещё раз или войдите по email.',
+    googleFailed: 'Не удалось войти через Google. Попробуйте ещё раз или войдите по email.',
   },
   login: {
     metaTitle: 'Вход',

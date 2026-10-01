@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { APIError, createAuthMiddleware } from 'better-auth/api'
+import { APIError, createAuthMiddleware, getSessionFromCtx } from 'better-auth/api'
 import { admin, twoFactor } from 'better-auth/plugins'
 import { adminAc, userAc } from 'better-auth/plugins/admin/access'
 import type { UserLocale } from '../shared/api.ts'
@@ -67,6 +67,17 @@ export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
       deleteUser: { enabled: true },
     },
     session: { expiresIn: THIRTY_DAYS },
+    account: {
+      accountLinking: { enabled: true, trustedProviders: ['google'] },
+    },
+    socialProviders: config.google
+      ? { google: { clientId: config.google.clientId, clientSecret: config.google.clientSecret } }
+      : {},
+    // Every OAuth failure (cancelled, bad state, not linkable) ends on a site
+    // page, never on Better Auth's English /api/auth/error. The sign-in call
+    // names the page in the visitor's language; this covers failures that
+    // happen before that is known. Better Auth appends ?error=<code>.
+    onAPIError: { errorURL: `${config.appUrl}/login` },
     rateLimit: {
       enabled: rateLimit,
       window: 60,
@@ -89,7 +100,9 @@ export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
       },
     },
     hooks: {
-      // Deleting an account always needs the password, not just a fresh session.
+      // Deleting an account needs the password, not just a fresh session. A user
+      // with no password (signed up with Google) has none to give, so for them
+      // Better Auth's fresh-session check is the gate.
       before: createAuthMiddleware(async (ctx) => {
         // Sign-up falls back to English for an unknown language (see the user
         // create hook); a profile update must name a real one.
@@ -100,7 +113,11 @@ export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
           }
         }
         if (ctx.path === '/delete-user' && !(ctx.body as { password?: unknown } | undefined)?.password) {
-          throw new APIError('BAD_REQUEST', { code: 'VALIDATION_ERROR', message: 'password required' })
+          const current = await getSessionFromCtx(ctx)
+          const accounts = current ? await ctx.context.internalAdapter.findAccounts(current.user.id) : []
+          if (!current || accounts.some((a) => a.providerId === 'credential')) {
+            throw new APIError('BAD_REQUEST', { code: 'VALIDATION_ERROR', message: 'password required' })
+          }
         }
       }),
       // The reset request answers the same bare body for known and unknown

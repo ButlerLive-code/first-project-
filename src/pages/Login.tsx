@@ -3,7 +3,9 @@ import { useSearchParams } from 'react-router'
 import { errorMessage } from '../api/errorMessage'
 import { LocalLink } from '../i18n/LocalLink'
 import { useLocalNavigate } from '../i18n/useLocalNavigate'
+import { googleErrorKey } from '../auth/google'
 import { safeNext } from '../auth/next'
+import { GoogleButton } from '../auth/ui/GoogleButton'
 import { useAuth } from '../auth/useAuth'
 import { message, useT, type Message } from '../i18n/useT'
 import { usePageMeta } from '../i18n/usePageMeta'
@@ -18,6 +20,8 @@ export function Login() {
   // After a password reset the email is passed along so it does not need retyping.
   const presetEmail = params.get('email') ?? ''
   const afterReset = params.get('reset') === '1'
+  // The way back from a failed or cancelled Google sign-in: ?error=<code>.
+  const googleError = googleErrorKey(params.get('error'))
   const [error, setError] = useState<Message>(null)
   const [busy, setBusy] = useState(false)
 
@@ -47,6 +51,13 @@ export function Login() {
             {t.login.passwordChanged}
           </p>
         )}
+
+        {googleError && (
+          <p className="form-error" role="alert">
+            {t.auth[googleError]}
+          </p>
+        )}
+        <GoogleButton next={next} />
 
         <form className="form" onSubmit={handleSubmit}>
           <label className="field">

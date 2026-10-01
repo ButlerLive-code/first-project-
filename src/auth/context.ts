@@ -37,7 +37,7 @@ export interface AuthValue {
   signUp: (input: SignUpInput) => Promise<void>
   signOut: () => Promise<void>
   updateUser: (patch: { name?: string; locale?: UserLocale }) => Promise<void>
-  deleteAccount: (password: string) => Promise<void>
+  deleteAccount: (password?: string) => Promise<void>
   // Re-reads the session after something changed it elsewhere (email confirmed, 2FA on).
   refresh: () => Promise<void>
 }

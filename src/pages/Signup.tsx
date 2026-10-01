@@ -4,6 +4,7 @@ import { errorMessage } from '../api/errorMessage'
 import { LocalLink } from '../i18n/LocalLink'
 import { useLocalNavigate } from '../i18n/useLocalNavigate'
 import { safeNext } from '../auth/next'
+import { GoogleButton } from '../auth/ui/GoogleButton'
 import { useAuth } from '../auth/useAuth'
 import { useLocale } from '../i18n/useLocale'
 import { message, useT, type Message } from '../i18n/useT'
@@ -46,6 +47,8 @@ export function Signup() {
       <div className="auth-card">
         <h1 className="auth-title">{t.signup.title}</h1>
         <p className="auth-subtitle">{t.signup.subtitle}</p>
+
+        <GoogleButton next={next} />
 
         <form className="form" onSubmit={handleSubmit}>
           <label className="field">

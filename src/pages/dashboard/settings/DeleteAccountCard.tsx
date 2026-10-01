@@ -1,30 +1,49 @@
-import { useState, type FormEvent } from 'react'
-import { errorMessage } from '../../../api/errorMessage'
-import { useAuth } from '../../../auth/useAuth'
-import { useLocalNavigate } from '../../../i18n/useLocalNavigate'
-import { message, useT, type Message } from '../../../i18n/useT'
+import { useEffect, useState, type FormEvent } from "react";
+import { errorMessage } from "../../../api/errorMessage";
+import { authClient } from "../../../auth/client";
+import { hasPassword } from "../../../auth/google";
+import { useAuth } from "../../../auth/useAuth";
+import { useLocalNavigate } from "../../../i18n/useLocalNavigate";
+import { message, useT, type Message } from "../../../i18n/useT";
 
 export function DeleteAccountCard() {
-  const t = useT()
-  const { deleteAccount } = useAuth()
-  const navigate = useLocalNavigate()
-  const [word, setWord] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState<Message>(null)
-  const [busy, setBusy] = useState(false)
+  const t = useT();
+  const { deleteAccount } = useAuth();
+  const navigate = useLocalNavigate();
+  const [word, setWord] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<Message>(null);
+  const [busy, setBusy] = useState(false);
+  // null until known. A Google-only account has no password to ask for.
+  const [needsPassword, setNeedsPassword] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    authClient
+      .listAccounts()
+      .then(({ data }) => {
+        if (!cancelled) setNeedsPassword(data ? hasPassword(data) : true);
+      })
+      .catch(() => {
+        if (!cancelled) setNeedsPassword(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
-    e.preventDefault()
-    setBusy(true)
-    setError(null)
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
     try {
-      await deleteAccount(password)
+      await deleteAccount(needsPassword ? password : undefined);
       // deleteAccount records `leavingFrom`, so RequireAuth sends the visitor home
       // rather than to /signup while the session store catches up.
-      navigate('/', { replace: true })
+      navigate("/", { replace: true });
     } catch (err) {
-      setError(message((t) => errorMessage(t, err)))
-      setBusy(false)
+      setError(message((t) => errorMessage(t, err)));
+      setBusy(false);
     }
   }
 
@@ -39,25 +58,40 @@ export function DeleteAccountCard() {
             <b>{t.settings.deleteWord}</b>
             {t.settings.typeAfter}
           </span>
-          <input value={word} onChange={(e) => setWord(e.target.value)} autoComplete="off" />
-        </label>
-        <label className="field">
-          <span>{t.settings.deletePassword}</span>
           <input
-            type="password"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value)
-              setError(null)
-            }}
-            autoComplete="current-password"
+            value={word}
+            onChange={(e) => setWord(e.target.value)}
+            autoComplete="off"
           />
         </label>
+        {needsPassword && (
+          <label className="field">
+            <span>{t.settings.deletePassword}</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError(null);
+              }}
+              autoComplete="current-password"
+            />
+          </label>
+        )}
         {error && <p className="form-error">{error(t)}</p>}
-        <button type="submit" className="btn btn-danger" disabled={busy || word !== t.settings.deleteWord || !password}>
+        <button
+          type="submit"
+          className="btn btn-danger"
+          disabled={
+            busy ||
+            needsPassword === null ||
+            word !== t.settings.deleteWord ||
+            (needsPassword && !password)
+          }
+        >
           {t.settings.deleteButton}
         </button>
       </form>
     </div>
-  )
+  );
 }

@@ -174,6 +174,10 @@ export const en = {
     emailPlaceholder: 'you@example.com',
     password: 'Password',
     passwordTooShort: 'Password must be at least 8 characters.',
+    google: 'Continue with Google',
+    or: 'or',
+    googleCancelled: 'Google sign-in was cancelled. You can try again or use your email.',
+    googleFailed: "We couldn't sign you in with Google. Please try again or use your email.",
   },
   login: {
     metaTitle: 'Sign In',
