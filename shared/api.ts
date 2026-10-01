@@ -76,6 +76,15 @@ export interface Me {
   preferences: Preferences
 }
 
+// One signed-in browser of the current user. The raw token and IP stay on the server.
+export interface SessionInfo {
+  id: string
+  createdAt: string
+  updatedAt: string
+  userAgent: string | null
+  current: boolean
+}
+
 export interface Device {
   id: string
   name: string

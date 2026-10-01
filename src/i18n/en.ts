@@ -444,6 +444,7 @@ export const en = {
       signOutEverywhere: 'Sign Out on All Devices',
     },
     password: 'Password',
+    wrongCurrent: 'Your current password is wrong.',
     noPassword: 'Your account has no password yet. Set one with',
     currentPassword: 'Current password',
     newPassword: 'New password',

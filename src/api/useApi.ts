@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { AppConfig, Device, Me, Payment } from '../../shared/api'
+import type { AppConfig, Device, Me, Payment, SessionInfo } from '../../shared/api'
 import { useAuth } from '../auth/useAuth'
 import { apiFetch, toApiError } from './client'
 import { createRequests, initialState, view, withClear, withData, withError, type LoadState } from './loadState'
@@ -55,6 +55,11 @@ export function useMe() {
 export function useDevices() {
   const { user } = useAuth()
   return useApi<Device[]>(user ? '/api/me/devices' : null)
+}
+
+export function useSessions() {
+  const { user } = useAuth()
+  return useApi<SessionInfo[]>(user ? '/api/me/sessions' : null)
 }
 
 export function usePayments() {

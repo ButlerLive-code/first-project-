@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { ApiError } from '../../../api/client'
 import { errorMessage } from '../../../api/errorMessage'
 import { authCall } from '../../../auth/authCall'
 import { authClient } from '../../../auth/client'
@@ -42,7 +43,12 @@ export function PasswordCard() {
       form.reset()
       setSaved(true)
     } catch (err) {
-      setError(message((t) => errorMessage(t, err)))
+      // Here a wrong password can only be the current one.
+      setError(
+        err instanceof ApiError && err.code === 'invalid_credentials'
+          ? message((t) => t.settings.wrongCurrent)
+          : message((t) => errorMessage(t, err)),
+      )
     } finally {
       setBusy(false)
     }

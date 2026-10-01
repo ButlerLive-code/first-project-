@@ -1,12 +1,12 @@
 import { randomUUID } from 'node:crypto'
-import { and, count, desc, eq } from 'drizzle-orm'
+import { and, count, desc, eq, gt } from 'drizzle-orm'
 import { Hono } from 'hono'
 import * as z from 'zod'
-import { locales, platformIds, type Me } from '../../shared/api.ts'
+import { locales, platformIds, type Me, type SessionInfo } from '../../shared/api.ts'
 import { deviceLimit } from '../../shared/plans.ts'
 import type { Auth } from '../auth.ts'
 import type { Db } from '../db/client.ts'
-import { device, payment, preferences, subscription, user } from '../db/schema.ts'
+import { device, payment, preferences, session, subscription, user } from '../db/schema.ts'
 import { AppError, readBody } from '../errors.ts'
 import { requireUser, type AppEnv } from '../middleware.ts'
 import { defaultPreferences, toDevice, toPayment, toPreferences, toProfile, toSubscription } from './serialize.ts'
@@ -100,6 +100,23 @@ export function meRoutes({ db, auth }: { db: Db; auth: Auth }) {
         .returning({ id: device.id })
       if (!deleted.length) throw new AppError('not_found', 404)
       return c.body(null, 204)
+    })
+    // Better Auth's list-sessions demands a fresh login, and sessions here last 30 days.
+    .get('/sessions', async (c) => {
+      const rows = await db
+        .select()
+        .from(session)
+        .where(and(eq(session.userId, c.get('user').id), gt(session.expiresAt, new Date())))
+        .orderBy(desc(session.createdAt))
+      const current = c.get('session').id
+      const body: SessionInfo[] = rows.map((row) => ({
+        id: row.id,
+        createdAt: row.createdAt.toISOString(),
+        updatedAt: row.updatedAt.toISOString(),
+        userAgent: row.userAgent,
+        current: row.id === current,
+      }))
+      return c.json(body)
     })
     .get('/payments', async (c) => {
       const rows = await db

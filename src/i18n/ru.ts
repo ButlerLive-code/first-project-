@@ -443,6 +443,7 @@ export const ru: Dictionary = {
       signOutEverywhere: 'Выйти на всех устройствах',
     },
     password: 'Пароль',
+    wrongCurrent: 'Текущий пароль указан неверно.',
     noPassword: 'У вашего аккаунта ещё нет пароля. Задайте его через',
     currentPassword: 'Текущий пароль',
     newPassword: 'Новый пароль',

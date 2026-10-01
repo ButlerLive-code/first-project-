@@ -2,6 +2,8 @@ import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { APIError, createAuthMiddleware, getSessionFromCtx } from 'better-auth/api'
 import { admin, twoFactor } from 'better-auth/plugins'
+import { createHash } from 'node:crypto'
+import { and, eq, ne } from 'drizzle-orm'
 import { deleteSessionCookie } from 'better-auth/cookies'
 import { generateRandomString } from 'better-auth/crypto'
 import { adminAc, userAc } from 'better-auth/plugins/admin/access'
@@ -61,6 +63,16 @@ export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
       // Also used for a changed address: Better Auth passes the new email as user.email.
       sendVerificationEmail: async ({ user, token }) => {
         const kind = isEmailChangeToken(token) ? 'changeEmail' : 'verifyEmail'
+        // Better Auth's change link names only the old address. Remember which
+        // account asked, so the link works once and only for that account.
+        if (kind === 'changeEmail') {
+          await db.insert(schema.verification).values({
+            id: crypto.randomUUID(),
+            identifier: changeLinkId(token),
+            value: user.id,
+            expiresAt: new Date(Date.now() + 60 * 60 * 24 * 1000),
+          })
+        }
         await sendMail(kind, user, '/verify-email', { token })
       },
     },
@@ -129,6 +141,36 @@ export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
             throw new APIError('BAD_REQUEST', { code: 'VALIDATION_ERROR', message: 'invalid locale' })
           }
         }
+        // A change-email link is bound to the account only by the old address in
+        // its payload, and Better Auth would sign in whoever opens it. Refuse it
+        // unless that address still belongs to the account that asked.
+        if (ctx.path === '/verify-email') {
+          const payload = changeEmailPayload((ctx.query as { token?: unknown } | undefined)?.token)
+          if (!payload) return
+          const [owner] = await db.select().from(schema.user).where(eq(schema.user.email, payload.email.toLowerCase()))
+          // The account that asked must still own the old address. A link for a
+          // deleted account, or for one that later re-registered the address,
+          // fails here, and a used link has no row left.
+          const [asked] = await db
+            .select()
+            .from(schema.verification)
+            .where(eq(schema.verification.identifier, changeLinkId(String((ctx.query as { token?: unknown }).token))))
+          if (!owner || !asked || asked.value !== owner.id || asked.expiresAt < new Date()) {
+            throw new APIError('BAD_REQUEST', { code: 'INVALID_TOKEN', message: 'invalid token' })
+          }
+          const [taken] = await db.select().from(schema.user).where(eq(schema.user.email, payload.updateTo.toLowerCase()))
+          if (taken && taken.id !== owner.id) {
+            throw new APIError('BAD_REQUEST', { code: 'USER_ALREADY_EXISTS', message: 'email taken' })
+          }
+        }
+        // Only a confirmed address may start a change: otherwise whoever
+        // registered it first could move the account around.
+        if (ctx.path === '/change-email') {
+          const current = await getSessionFromCtx(ctx)
+          if (current && !current.user.emailVerified) {
+            throw new APIError('FORBIDDEN', { code: 'EMAIL_NOT_VERIFIED', message: 'email not verified' })
+          }
+        }
         if (ctx.path === '/delete-user' && !(ctx.body as { password?: unknown } | undefined)?.password) {
           const current = await getSessionFromCtx(ctx)
           // No session: Better Auth's own unauthorized answer applies.
@@ -143,6 +185,19 @@ export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
       // emails; Better Auth's English message never reaches the browser.
       after: createAuthMiddleware(async (ctx) => {
         if (ctx.path === '/request-password-reset') return ctx.json({ status: true })
+        // A confirmed address change signs the account's other devices out;
+        // this browser (or the one the link just signed in) stays.
+        if (ctx.path === '/verify-email') {
+          const payload = changeEmailPayload((ctx.query as { token?: unknown } | undefined)?.token)
+          if (!payload) return
+          const [changed] = await db.select().from(schema.user).where(eq(schema.user.email, payload.updateTo.toLowerCase()))
+          if (!changed || changed.emailVerified !== true) return
+          await db.delete(schema.verification).where(eq(schema.verification.identifier, changeLinkId(String((ctx.query as { token?: unknown }).token))))
+          const keep = ctx.context.newSession?.session.token ?? (await getSessionFromCtx(ctx))?.session.token
+          await db
+            .delete(schema.session)
+            .where(keep ? and(eq(schema.session.userId, changed.id), ne(schema.session.token, keep)) : eq(schema.session.userId, changed.id))
+        }
         // The twoFactor plugin only guards password sign-in. A Google sign-in
         // of a 2FA account must not skip the second step: swap the new session
         // for the same challenge the password flow sets, and send the browser
@@ -181,14 +236,27 @@ export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
 
 export type Auth = ReturnType<typeof createAuth>
 
-// Email-change tokens are JWTs whose payload carries `updateTo`.
-function isEmailChangeToken(token: string) {
+// Email-change tokens are JWTs whose payload carries `updateTo`. The payload
+// is read without checking the signature: callers only use it to refuse a
+// request early, and Better Auth verifies the signature itself.
+function changeEmailPayload(token: unknown) {
+  if (typeof token !== 'string') return null
   try {
     const payload = JSON.parse(Buffer.from(token.split('.')[1] ?? '', 'base64url').toString('utf8')) as {
+      email?: unknown
       updateTo?: unknown
     }
-    return typeof payload.updateTo === 'string'
+    if (typeof payload.updateTo !== 'string' || typeof payload.email !== 'string') return null
+    return { email: payload.email, updateTo: payload.updateTo }
   } catch {
-    return false
+    return null
   }
+}
+
+function isEmailChangeToken(token: string) {
+  return changeEmailPayload(token) !== null
+}
+
+function changeLinkId(token: string) {
+  return `change-email-${createHash('sha256').update(token).digest('hex')}`
 }

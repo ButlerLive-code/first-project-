@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { ApiState } from '../../../api/ApiState'
+import { useSessions } from '../../../api/useApi'
 import { errorMessage } from '../../../api/errorMessage'
-import { authCall } from '../../../auth/authCall'
 import { authClient } from '../../../auth/client'
 import { formatDate } from '../../../auth/account'
 import { describeAgent } from '../../../auth/sessions'
@@ -9,39 +10,25 @@ import { useLocalNavigate } from '../../../i18n/useLocalNavigate'
 import { useLocale } from '../../../i18n/useLocale'
 import { message, useT, type Message } from '../../../i18n/useT'
 
-interface SessionRow {
-  id: string
-  userAgent?: string | null
-  createdAt: Date
-}
-
 export function SessionsCard() {
   const t = useT()
   const locale = useLocale()
   const navigate = useLocalNavigate()
   const { signOutEverywhere } = useAuth()
-  const current = authClient.useSession().data?.session.id
-  const [sessions, setSessions] = useState<SessionRow[] | null>(null)
+  const sessions = useSessions()
+  const { reload } = sessions
+  const sessionId = authClient.useSession().data?.session.id
   const [error, setError] = useState<Message>(null)
   const [busy, setBusy] = useState(false)
 
-  // Reloads when this device's session id changes (a password change swaps it
-  // and ends the others), so the list and the badge never go stale.
+  // A password change swaps this device's session and ends the others: re-read
+  // the list when the id changes (not on the first render, which already loads).
+  const seen = useRef(sessionId)
   useEffect(() => {
-    if (!current) return
-    let alive = true
-    authCall(() => authClient.listSessions()).then(
-      (list) => {
-        if (alive) setSessions(list)
-      },
-      (err: unknown) => {
-        if (alive) setError(message((t) => errorMessage(t, err)))
-      },
-    )
-    return () => {
-      alive = false
-    }
-  }, [current])
+    if (seen.current === sessionId) return
+    seen.current = sessionId
+    if (sessionId) reload()
+  }, [sessionId, reload])
 
   async function handleSignOutEverywhere() {
     setError(null)
@@ -61,13 +48,15 @@ export function SessionsCard() {
     <div className="card account-card">
       <h2 className="card-title">{t.settings.sessions.title}</h2>
       <p className="device-meta">{t.settings.sessions.text}</p>
-      {sessions && (
+      {!sessions.data ? (
+        <ApiState error={sessions.error} onRetry={sessions.reload} />
+      ) : (
         <ul className="stat-list">
-          {sessions.map((s) => (
+          {sessions.data.map((s) => (
             <li key={s.id}>
               <span>
                 {describeAgent(s.userAgent) ?? t.settings.sessions.unknownDevice}
-                {s.id === current && (
+                {s.current && (
                   <>
                     {' '}
                     <span className="badge badge-green">{t.common.thisDevice}</span>
