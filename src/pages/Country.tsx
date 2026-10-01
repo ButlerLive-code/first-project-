@@ -1,4 +1,5 @@
-import { Link, useParams } from 'react-router'
+import { useParams } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
 import { useConnectHref } from '../auth/useConnectHref'
 import { LoadBar } from '../components/LoadBar'
 import { PageHeader } from '../components/PageHeader'
@@ -40,9 +41,9 @@ export function Country() {
                   </dd>
                 </div>
               </dl>
-              <Link to={connectHref(s.id)} className="btn btn-primary">
+              <LocalLink to={connectHref(s.id)} className="btn btn-primary">
                 Connect to {s.city}
-              </Link>
+              </LocalLink>
             </li>
           ))}
         </ul>
@@ -53,9 +54,9 @@ export function Country() {
             <ul className="chips">
               {nearby.map((c) => (
                 <li key={c.slug}>
-                  <Link to={`/countries/${c.slug}`} className="chip">
+                  <LocalLink to={`/countries/${c.slug}`} className="chip">
                     {c.flag} {c.name}
-                  </Link>
+                  </LocalLink>
                 </li>
               ))}
             </ul>
@@ -63,9 +64,9 @@ export function Country() {
         )}
 
         <div className="page-actions">
-          <Link to="/countries" className="btn btn-outline">
+          <LocalLink to="/countries" className="btn btn-outline">
             ← All Countries
-          </Link>
+          </LocalLink>
         </div>
       </section>
     </>

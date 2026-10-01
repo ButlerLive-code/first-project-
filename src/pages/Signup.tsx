@@ -1,12 +1,15 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
+import { useLocalNavigate } from '../i18n/useLocalNavigate'
+import { safeNext } from '../auth/next'
 import { useAuth } from '../auth/useAuth'
 
 export function Signup() {
   const { signUp } = useAuth()
-  const navigate = useNavigate()
+  const navigate = useLocalNavigate()
   const [params] = useSearchParams()
-  const next = params.get('next') ?? '/checkout'
+  const next = safeNext(params.get('next'), '/checkout')
   const [error, setError] = useState('')
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -53,8 +56,8 @@ export function Signup() {
           <label className="checkbox">
             <input type="checkbox" required />
             <span>
-              I agree to the <Link to="/terms">Terms of Service</Link> and{' '}
-              <Link to="/privacy">Privacy Policy</Link>
+              I agree to the <LocalLink to="/terms">Terms of Service</LocalLink> and{' '}
+              <LocalLink to="/privacy">Privacy Policy</LocalLink>
             </span>
           </label>
           <button type="submit" className="btn btn-primary form-submit">
@@ -63,7 +66,7 @@ export function Signup() {
         </form>
 
         <p className="auth-switch">
-          Already have an account? <Link to={`/login?next=${encodeURIComponent(next)}`}>Sign in</Link>
+          Already have an account? <LocalLink to={`/login?next=${encodeURIComponent(next)}`}>Sign in</LocalLink>
         </p>
       </div>
     </section>

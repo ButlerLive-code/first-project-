@@ -1,5 +1,5 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react'
-import { Link } from 'react-router'
+import { LocalLink } from '../../i18n/LocalLink'
 import { billingLabel, formatDate, renewalDate } from '../../auth/account'
 import type { Payment, User } from '../../auth/context'
 import { useAuth } from '../../auth/useAuth'
@@ -101,13 +101,13 @@ export function Billing() {
               )}
               <div className="button-row">
                 {plan.id !== 'premium' && (
-                  <Link to="/checkout?plan=premium" className="btn btn-primary">
+                  <LocalLink to="/checkout?plan=premium" className="btn btn-primary">
                     Upgrade to Premium
-                  </Link>
+                  </LocalLink>
                 )}
-                <Link to={`/checkout?plan=${plan.id}`} className="btn btn-outline">
+                <LocalLink to={`/checkout?plan=${plan.id}`} className="btn btn-outline">
                   Change Plan
-                </Link>
+                </LocalLink>
               </div>
               {paid &&
                 (confirmCancel ? (
@@ -131,9 +131,9 @@ export function Billing() {
           ) : (
             <>
               <p>You don't have a plan yet.</p>
-              <Link to="/checkout" className="btn btn-primary">
+              <LocalLink to="/checkout" className="btn btn-primary">
                 Choose a Plan
-              </Link>
+              </LocalLink>
             </>
           )}
         </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
 import { PageHeader } from '../components/PageHeader'
 import { faq } from '../data/faq'
 
@@ -43,7 +43,7 @@ export function Faq() {
                     {item.link && (
                       <>
                         {' '}
-                        <Link to={item.link.to}>{item.link.label} →</Link>
+                        <LocalLink to={item.link.to}>{item.link.label} →</LocalLink>
                       </>
                     )}
                   </p>
@@ -55,9 +55,9 @@ export function Faq() {
 
         <div className="notice page-cta">
           <p>Didn't find your answer? Our support team is available 24/7.</p>
-          <Link to="/help#contact" className="btn btn-primary">
+          <LocalLink to="/help#contact" className="btn btn-primary">
             Contact Support
-          </Link>
+          </LocalLink>
         </div>
       </section>
     </>

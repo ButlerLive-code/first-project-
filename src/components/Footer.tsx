@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
 import logo from '../assets/logo.svg'
 import facebook from '../assets/facebook.svg'
 import twitter from '../assets/twitter.svg'
@@ -90,9 +90,9 @@ export function Footer() {
 
         <div className="footer-main">
           <div className="footer-about">
-            <Link to="/">
+            <LocalLink to="/">
               <img src={logo} alt="LaslesVPN" width={149} height={36} />
-            </Link>
+            </LocalLink>
             <p>
               <b>LaslesVPN</b> is a private virtual network that has unique features and has high
               security.
@@ -117,7 +117,7 @@ export function Footer() {
               <ul>
                 {col.links.map((link) => (
                   <li key={link.label}>
-                    <Link to={link.to}>{link.label}</Link>
+                    <LocalLink to={link.to}>{link.label}</LocalLink>
                   </li>
                 ))}
               </ul>

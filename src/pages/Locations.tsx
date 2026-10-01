@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
 import map from '../assets/map.svg'
 import { PageHeader } from '../components/PageHeader'
 import { countries, regions, servers } from '../data/servers'
@@ -47,12 +47,12 @@ export function Locations() {
                 <ul className="aside-links">
                   {list.map((c) => (
                     <li key={c.slug}>
-                      <Link to={`/countries/${c.slug}`}>
+                      <LocalLink to={`/countries/${c.slug}`}>
                         <span>
                           {c.flag} {c.name}
                         </span>
                         <span className="muted">{c.servers.length}</span>
-                      </Link>
+                      </LocalLink>
                     </li>
                   ))}
                 </ul>
@@ -62,12 +62,12 @@ export function Locations() {
         </div>
 
         <div className="page-actions">
-          <Link to="/servers" className="btn btn-primary">
+          <LocalLink to="/servers" className="btn btn-primary">
             See All Servers
-          </Link>
-          <Link to="/countries" className="btn btn-outline">
+          </LocalLink>
+          <LocalLink to="/countries" className="btn btn-outline">
             Browse Countries
-          </Link>
+          </LocalLink>
         </div>
       </section>
     </>

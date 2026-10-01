@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
 import { useAuth } from '../auth/useAuth'
 import { LanguageSwitcher } from '../i18n/LanguageSwitcher'
 import logo from '../assets/logo.svg'
@@ -19,9 +19,9 @@ export function Header() {
 
   return (
     <header className="header container">
-      <Link to="/" className="header-logo" onClick={close}>
+      <LocalLink to="/" className="header-logo" onClick={close}>
         <img src={logo} alt="LaslesVPN" width={149} height={36} />
-      </Link>
+      </LocalLink>
 
       <button
         type="button"
@@ -40,9 +40,9 @@ export function Header() {
           <ul className="header-nav">
             {links.map((link) => (
               <li key={link.label}>
-                <Link to={link.to} onClick={close}>
+                <LocalLink to={link.to} onClick={close}>
                   {link.label}
-                </Link>
+                </LocalLink>
               </li>
             ))}
           </ul>
@@ -50,17 +50,17 @@ export function Header() {
         <div className="header-auth">
           <LanguageSwitcher onSwitch={close} />
           {user ? (
-            <Link to="/dashboard" className="btn header-signup" onClick={close}>
+            <LocalLink to="/dashboard" className="btn header-signup" onClick={close}>
               My Account
-            </Link>
+            </LocalLink>
           ) : (
             <>
-              <Link to="/login" className="header-signin" onClick={close}>
+              <LocalLink to="/login" className="header-signin" onClick={close}>
                 Sign In
-              </Link>
-              <Link to="/signup" className="btn header-signup" onClick={close}>
+              </LocalLink>
+              <LocalLink to="/signup" className="btn header-signup" onClick={close}>
                 Sign Up
-              </Link>
+              </LocalLink>
             </>
           )}
         </div>

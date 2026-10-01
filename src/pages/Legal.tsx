@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
 import { PageHeader } from '../components/PageHeader'
 import { formatDate } from '../data/blog'
 import type { LegalDoc } from '../data/legal'
@@ -35,7 +35,7 @@ export function Legal({ doc }: { doc: LegalDoc }) {
             </section>
           ))}
           <p className="form-note legal-help">
-            Questions? <Link to="/help#contact">Contact our team</Link>.
+            Questions? <LocalLink to="/help#contact">Contact our team</LocalLink>.
           </p>
         </div>
       </section>

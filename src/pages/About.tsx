@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
 import { PageHeader } from '../components/PageHeader'
 import { countries, servers } from '../data/servers'
 
@@ -79,12 +79,12 @@ export function About() {
         </ul>
 
         <div className="page-actions">
-          <Link to="/partners" className="btn btn-primary">
+          <LocalLink to="/partners" className="btn btn-primary">
             Partner With Us
-          </Link>
-          <Link to="/help#contact" className="btn btn-outline">
+          </LocalLink>
+          <LocalLink to="/help#contact" className="btn btn-outline">
             Contact Us
-          </Link>
+          </LocalLink>
         </div>
       </section>
     </>

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router'
+import { LocalLink } from '../../i18n/LocalLink'
 import { formatDate, getDevices, newId } from '../../auth/account'
 import type { Device } from '../../auth/context'
 import { useAuth } from '../../auth/useAuth'
@@ -59,9 +59,9 @@ export function Devices() {
             Your plan allows {limit} {limit === 1 ? 'device' : 'devices'}. Remove{' '}
             {devices.length - limit} or upgrade to keep them all connected.
           </p>
-          <Link to="/checkout?plan=premium" className="btn btn-primary">
+          <LocalLink to="/checkout?plan=premium" className="btn btn-primary">
             Upgrade
-          </Link>
+          </LocalLink>
         </div>
       )}
 
@@ -102,7 +102,7 @@ export function Devices() {
             {plan?.id !== 'premium' && (
               <>
                 {' '}
-                or <Link to={`/checkout?plan=${plan ? 'premium' : 'standard'}`} className="text-link">upgrade your plan</Link>
+                or <LocalLink to={`/checkout?plan=${plan ? 'premium' : 'standard'}`} className="text-link">upgrade your plan</LocalLink>
               </>
             )}{' '}
             to add another.
@@ -131,7 +131,7 @@ export function Devices() {
         {added && (
           <p className="form-note" role="status">
             <b>{added.name}</b> is added. Next, install the app:{' '}
-            <Link to={`/tutorials/${added.platform}`}>{getPlatform(added.platform)?.name} setup guide</Link>
+            <LocalLink to={`/tutorials/${added.platform}`}>{getPlatform(added.platform)?.name} setup guide</LocalLink>
           </p>
         )}
       </div>

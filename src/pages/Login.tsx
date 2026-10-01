@@ -1,12 +1,15 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
+import { useLocalNavigate } from '../i18n/useLocalNavigate'
+import { safeNext } from '../auth/next'
 import { useAuth } from '../auth/useAuth'
 
 export function Login() {
   const { signIn } = useAuth()
-  const navigate = useNavigate()
+  const navigate = useLocalNavigate()
   const [params] = useSearchParams()
-  const next = params.get('next') ?? '/dashboard'
+  const next = safeNext(params.get('next'))
   const [error, setError] = useState('')
   const [resetSent, setResetSent] = useState(false)
 
@@ -59,7 +62,7 @@ export function Login() {
 
         <p className="auth-switch">
           New to LaslesVPN?{' '}
-          <Link to={`/signup?next=${encodeURIComponent(next)}`}>Create an account</Link>
+          <LocalLink to={`/signup?next=${encodeURIComponent(next)}`}>Create an account</LocalLink>
         </p>
       </div>
     </section>

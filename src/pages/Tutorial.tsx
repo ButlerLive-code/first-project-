@@ -1,4 +1,5 @@
-import { Link, useParams } from 'react-router'
+import { useParams } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
 import { PageHeader } from '../components/PageHeader'
 import { getPlatform, platforms } from '../data/platforms'
 import { NotFound } from './NotFound'
@@ -46,20 +47,20 @@ export function Tutorial() {
             {platform.icon}
           </span>
           <h2 className="card-title">Ready to install?</h2>
-          <Link to="/download" className="btn btn-primary">
+          <LocalLink to="/download" className="btn btn-primary">
             Download for {platform.name}
-          </Link>
+          </LocalLink>
           <p className="form-note">
-            Need help? <Link to="/faq">Read the FAQ</Link>
+            Need help? <LocalLink to="/faq">Read the FAQ</LocalLink>
           </p>
           <hr />
           <p className="aside-label">Other platforms</p>
           <ul className="aside-links">
             {others.map((p) => (
               <li key={p.id}>
-                <Link to={`/tutorials/${p.id}`}>
+                <LocalLink to={`/tutorials/${p.id}`}>
                   {p.icon} {p.name}
-                </Link>
+                </LocalLink>
               </li>
             ))}
           </ul>

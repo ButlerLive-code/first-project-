@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
 import { PageHeader } from '../components/PageHeader'
 import { SuccessCard } from '../components/SuccessCard'
 
@@ -42,7 +42,7 @@ export function Partners() {
             <h2 className="section-title">Tell us about your company</h2>
             <p>
               Our partnerships team will get back to you within 2 business days. Creators and
-              bloggers should look at our <Link to="/affiliate">Affiliate Program</Link> instead.
+              bloggers should look at our <LocalLink to="/affiliate">Affiliate Program</LocalLink> instead.
             </p>
           </div>
           {sent ? (

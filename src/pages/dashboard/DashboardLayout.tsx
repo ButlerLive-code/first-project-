@@ -1,5 +1,7 @@
 import { startTransition } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router'
+import { Outlet } from 'react-router'
+import { LocalNavLink } from '../../i18n/LocalLink'
+import { useLocalNavigate } from '../../i18n/useLocalNavigate'
 import { useAuth } from '../../auth/useAuth'
 
 const tabs = [
@@ -11,7 +13,7 @@ const tabs = [
 
 export function DashboardLayout() {
   const { user, signOut } = useAuth()
-  const navigate = useNavigate()
+  const navigate = useLocalNavigate()
 
   if (!user) return null
 
@@ -38,9 +40,9 @@ export function DashboardLayout() {
 
       <nav className="dashboard-tabs" aria-label="Account sections">
         {tabs.map((tab) => (
-          <NavLink key={tab.to} to={tab.to} end={tab.end}>
+          <LocalNavLink key={tab.to} to={tab.to} end={tab.end}>
             {tab.label}
-          </NavLink>
+          </LocalNavLink>
         ))}
       </nav>
 

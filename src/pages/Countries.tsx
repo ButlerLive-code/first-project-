@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
 import { PageHeader } from '../components/PageHeader'
 import { countries, regions, type Region } from '../data/servers'
 
@@ -48,7 +48,7 @@ export function Countries() {
           <ul className="country-grid">
             {visible.map((c) => (
               <li key={c.slug}>
-                <Link to={`/countries/${c.slug}`} className="card country-card quick-link">
+                <LocalLink to={`/countries/${c.slug}`} className="card country-card quick-link">
                   <span className="country-flag" aria-hidden="true">
                     {c.flag}
                   </span>
@@ -58,7 +58,7 @@ export function Countries() {
                     {c.bestPing} ms
                   </span>
                   {c.freeAvailable && <span className="badge badge-green">Free</span>}
-                </Link>
+                </LocalLink>
               </li>
             ))}
           </ul>

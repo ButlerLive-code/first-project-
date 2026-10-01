@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
+import { LocalLink } from '../../i18n/LocalLink'
 import { formatDate, getDevices, renewalDate } from '../../auth/account'
 import { useAuth } from '../../auth/useAuth'
 import { getPlatform } from '../../data/platforms'
@@ -85,9 +86,9 @@ export function Overview() {
           <p>
             You don't have an active plan yet. Choose one to start browsing securely.
           </p>
-          <Link to="/checkout" className="btn btn-primary">
+          <LocalLink to="/checkout" className="btn btn-primary">
             Choose a Plan
-          </Link>
+          </LocalLink>
         </div>
       )}
 
@@ -131,7 +132,7 @@ export function Overview() {
           {locked && (
             <p className="form-note">
               This location is available on Premium.{' '}
-              <Link to="/checkout?plan=premium">Upgrade</Link>
+              <LocalLink to="/checkout?plan=premium">Upgrade</LocalLink>
             </p>
           )}
         </div>
@@ -161,9 +162,9 @@ export function Overview() {
                   </b>
                 </li>
               </ul>
-              <Link to="/dashboard/billing" className="btn btn-outline">
+              <LocalLink to="/dashboard/billing" className="btn btn-outline">
                 Manage Billing
-              </Link>
+              </LocalLink>
             </>
           ) : (
             <p>No active plan.</p>
@@ -185,9 +186,9 @@ export function Overview() {
               </li>
             ))}
           </ul>
-          <Link to="/dashboard/devices" className="btn btn-outline">
+          <LocalLink to="/dashboard/devices" className="btn btn-outline">
             Manage Devices
-          </Link>
+          </LocalLink>
         </div>
       </div>
 
@@ -195,10 +196,10 @@ export function Overview() {
       <ul className="quick-links">
         {quickLinks.map((link) => (
           <li key={link.to}>
-            <Link to={link.to} className="card quick-link">
+            <LocalLink to={link.to} className="card quick-link">
               <span className="card-title">{link.title}</span>
               <span>{link.text}</span>
-            </Link>
+            </LocalLink>
           </li>
         ))}
       </ul>

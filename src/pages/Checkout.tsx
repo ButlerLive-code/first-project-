@@ -1,5 +1,6 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
+import { useLocalNavigate } from '../i18n/useLocalNavigate'
 import { newId } from '../auth/account'
 import type { Billing } from '../auth/context'
 import { useAuth } from '../auth/useAuth'
@@ -11,7 +12,7 @@ const YEARLY_MONTHS = 10
 
 export function Checkout() {
   const { user, updateUser } = useAuth()
-  const navigate = useNavigate()
+  const navigate = useLocalNavigate()
   const [params, setParams] = useSearchParams()
   const plan = getPlan(params.get('plan')) ?? getPlan(user?.plan) ?? plans[1]
   const [billing, setBilling] = useState<Billing>(user?.billing ?? 'monthly')

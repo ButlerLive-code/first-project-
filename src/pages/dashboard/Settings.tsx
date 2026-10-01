@@ -1,5 +1,5 @@
 import { startTransition, useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router'
+import { useLocalNavigate } from '../../i18n/useLocalNavigate'
 import { getPreferences } from '../../auth/account'
 import type { Preferences } from '../../auth/context'
 import { useAuth } from '../../auth/useAuth'
@@ -26,7 +26,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export function Settings() {
   const { user, updateUser, deleteAccount } = useAuth()
-  const navigate = useNavigate()
+  const navigate = useLocalNavigate()
   const [profileSaved, setProfileSaved] = useState(false)
   const [profileError, setProfileError] = useState('')
   const [passwordSaved, setPasswordSaved] = useState(false)

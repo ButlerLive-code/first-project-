@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
 import { useAuth } from '../auth/useAuth'
 import { useConnectHref } from '../auth/useConnectHref'
 import { LoadBar } from '../components/LoadBar'
@@ -32,7 +32,7 @@ export function Servers() {
     <>
       <PageHeader eyebrow="Servers" title="Live server status">
         Pick a server with low ping and load for the fastest connection. Premium servers are
-        unlocked with the <Link to="/checkout?plan=premium">Premium plan</Link>.
+        unlocked with the <LocalLink to="/checkout?plan=premium">Premium plan</LocalLink>.
       </PageHeader>
 
       <section className="container page-section">
@@ -91,14 +91,14 @@ export function Servers() {
                 {visible.map((s) => (
                   <tr key={s.id}>
                     <td>
-                      <Link to={`/countries/${s.countrySlug}`} className="table-location">
+                      <LocalLink to={`/countries/${s.countrySlug}`} className="table-location">
                         <span aria-hidden="true">{s.flag}</span>
                         <span>
                           <b>{s.city}</b>
                           <br />
                           <span className="muted">{s.country}</span>
                         </span>
-                      </Link>
+                      </LocalLink>
                     </td>
                     <td>{s.region}</td>
                     <td>{s.ping} ms</td>
@@ -112,13 +112,13 @@ export function Servers() {
                     </td>
                     <td>
                       {canUse(s.premium) || !user ? (
-                        <Link to={connectHref(s.id)} className="btn btn-outline btn-sm">
+                        <LocalLink to={connectHref(s.id)} className="btn btn-outline btn-sm">
                           Connect
-                        </Link>
+                        </LocalLink>
                       ) : (
-                        <Link to="/checkout?plan=premium" className="btn btn-outline btn-sm">
+                        <LocalLink to="/checkout?plan=premium" className="btn btn-outline btn-sm">
                           Upgrade
-                        </Link>
+                        </LocalLink>
                       )}
                     </td>
                   </tr>

@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useLocalNavigate } from '../i18n/useLocalNavigate'
 import { plans } from '../data/plans'
 
 export function Pricing() {
   const [selected, setSelected] = useState(plans.length - 1)
-  const navigate = useNavigate()
+  const navigate = useLocalNavigate()
 
   return (
     <section className="pricing container" id="pricing">

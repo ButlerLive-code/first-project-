@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
 import { PageHeader } from '../components/PageHeader'
 import { categories, formatDate, posts } from '../data/blog'
 
@@ -29,7 +29,7 @@ export function Blog() {
         </div>
 
         {featured && (
-          <Link to={`/blog/${featured.slug}`} className="card post-featured quick-link">
+          <LocalLink to={`/blog/${featured.slug}`} className="card post-featured quick-link">
             <span className="post-cover post-cover-lg" aria-hidden="true">
               {featured.emoji}
             </span>
@@ -42,13 +42,13 @@ export function Blog() {
               <span>{featured.excerpt}</span>
               <span className="platform-guide">Read article →</span>
             </span>
-          </Link>
+          </LocalLink>
         )}
 
         <ul className="post-grid">
           {rest.map((post) => (
             <li key={post.slug}>
-              <Link to={`/blog/${post.slug}`} className="card post-card quick-link">
+              <LocalLink to={`/blog/${post.slug}`} className="card post-card quick-link">
                 <span className="post-cover" aria-hidden="true">
                   {post.emoji}
                 </span>
@@ -57,7 +57,7 @@ export function Blog() {
                 </span>
                 <span className="post-title">{post.title}</span>
                 <span className="post-excerpt">{post.excerpt}</span>
-              </Link>
+              </LocalLink>
             </li>
           ))}
         </ul>

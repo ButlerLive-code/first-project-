@@ -1,4 +1,5 @@
-import { Link, useParams } from 'react-router'
+import { useParams } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
 import { formatDate, getPost, posts } from '../data/blog'
 import { NotFound } from './NotFound'
 
@@ -15,9 +16,9 @@ export function BlogPost() {
   return (
     <>
       <article className="container article">
-        <Link to="/blog" className="back-link">
+        <LocalLink to="/blog" className="back-link">
           ← All articles
-        </Link>
+        </LocalLink>
         <p className="post-meta">
           <span className="badge">{post.category}</span> {formatDate(post.date)} · {post.readMinutes}{' '}
           min read
@@ -35,9 +36,9 @@ export function BlogPost() {
 
         <div className="notice page-cta">
           <p>Ready to put this into practice? Start with the Free plan — no card required.</p>
-          <Link to="/#pricing" className="btn btn-primary">
+          <LocalLink to="/#pricing" className="btn btn-primary">
             Get LaslesVPN
-          </Link>
+          </LocalLink>
         </div>
       </article>
 
@@ -46,7 +47,7 @@ export function BlogPost() {
         <ul className="post-grid">
           {related.map((p) => (
             <li key={p.slug}>
-              <Link to={`/blog/${p.slug}`} className="card post-card quick-link">
+              <LocalLink to={`/blog/${p.slug}`} className="card post-card quick-link">
                 <span className="post-cover" aria-hidden="true">
                   {p.emoji}
                 </span>
@@ -54,7 +55,7 @@ export function BlogPost() {
                   <span className="badge">{p.category}</span> {p.readMinutes} min read
                 </span>
                 <span className="post-title">{p.title}</span>
-              </Link>
+              </LocalLink>
             </li>
           ))}
         </ul>

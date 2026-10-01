@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
 import { useAuth } from '../auth/useAuth'
 import { PageHeader } from '../components/PageHeader'
 import { detectPlatform, platforms, type Platform } from '../data/platforms'
@@ -35,16 +35,16 @@ export function Download() {
                   Your download of <b>{started.file}</b> would start now (demo).
                 </>
               )}{' '}
-              Next: <Link to={`/tutorials/${started.id}`}>follow the {started.name} setup guide</Link>
+              Next: <LocalLink to={`/tutorials/${started.id}`}>follow the {started.name} setup guide</LocalLink>
               {user ? (
                 <>
                   {' '}
-                  and connect from <Link to="/dashboard">your dashboard</Link>.
+                  and connect from <LocalLink to="/dashboard">your dashboard</LocalLink>.
                 </>
               ) : (
                 <>
                   {' '}
-                  and <Link to="/signup?next=%2Fdashboard">create your free account</Link> to sign
+                  and <LocalLink to="/signup?next=%2Fdashboard">create your free account</LocalLink> to sign
                   in.
                 </>
               )}
@@ -86,9 +86,9 @@ export function Download() {
               >
                 {isStore(p) ? p.file : 'Download'}
               </button>
-              <Link to={`/tutorials/${p.id}`} className="platform-guide">
+              <LocalLink to={`/tutorials/${p.id}`} className="platform-guide">
                 Setup guide →
-              </Link>
+              </LocalLink>
             </li>
           ))}
         </ul>
@@ -96,9 +96,9 @@ export function Download() {
         {!user && (
           <div className="notice page-cta">
             <p>You'll need a LaslesVPN account to sign in to the app — it's free to start.</p>
-            <Link to="/signup?next=%2Fdashboard" className="btn btn-primary">
+            <LocalLink to="/signup?next=%2Fdashboard" className="btn btn-primary">
               Create Free Account
-            </Link>
+            </LocalLink>
           </div>
         )}
       </section>

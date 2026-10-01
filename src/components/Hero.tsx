@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
 import hero from '../assets/hero.svg'
 import iconUser from '../assets/icon-user.svg'
 import iconLocation from '../assets/icon-location.svg'
@@ -21,9 +21,9 @@ export function Hero() {
           Provide a network for all your needs with ease and fun using <b>LaslesVPN</b> discover
           interesting features from us.
         </p>
-        <Link to="/signup" className="btn btn-primary hero-cta">
+        <LocalLink to="/signup" className="btn btn-primary hero-cta">
           Get Started
-        </Link>
+        </LocalLink>
       </div>
       <img className="hero-image" src={hero} alt="" width={611} height={382} />
 

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
 import { useAuth } from '../auth/useAuth'
 import { PageHeader } from '../components/PageHeader'
 import { SuccessCard } from '../components/SuccessCard'
@@ -54,10 +55,10 @@ export function Help() {
               <ul className="aside-links">
                 {matches.map((m) => (
                   <li key={m.q}>
-                    <Link to="/faq">
+                    <LocalLink to="/faq">
                       <span>{m.q}</span>
                       <span className="muted">{m.category}</span>
-                    </Link>
+                    </LocalLink>
                   </li>
                 ))}
               </ul>
@@ -68,13 +69,13 @@ export function Help() {
         <ul className="benefit-grid">
           {topics.map((t) => (
             <li key={t.title}>
-              <Link to={t.to} className="card benefit quick-link">
+              <LocalLink to={t.to} className="card benefit quick-link">
                 <span className="platform-icon" aria-hidden="true">
                   {t.icon}
                 </span>
                 <span className="card-title">{t.title}</span>
                 <span>{t.text}</span>
-              </Link>
+              </LocalLink>
             </li>
           ))}
         </ul>
@@ -90,7 +91,7 @@ export function Help() {
               <li>⏱️ Average reply: under 4 hours</li>
               <li>🌐 Support in English</li>
               <li>
-                📚 Quick answers in the <Link to="/faq">FAQ</Link>
+                📚 Quick answers in the <LocalLink to="/faq">FAQ</LocalLink>
               </li>
             </ul>
           </div>

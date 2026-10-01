@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
 import { PageHeader } from '../components/PageHeader'
 
 const benefits = [
@@ -86,12 +86,12 @@ export function WhatIsVpn() {
         </ul>
 
         <div className="page-actions">
-          <Link to="/#pricing" className="btn btn-primary">
+          <LocalLink to="/#pricing" className="btn btn-primary">
             Choose Your Plan
-          </Link>
-          <Link to="/faq" className="btn btn-outline">
+          </LocalLink>
+          <LocalLink to="/faq" className="btn btn-outline">
             Read the FAQ
-          </Link>
+          </LocalLink>
         </div>
       </section>
     </>

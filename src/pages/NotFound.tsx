@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { LocalLink } from '../i18n/LocalLink'
 
 export function NotFound() {
   return (
@@ -6,9 +6,9 @@ export function NotFound() {
       <p className="eyebrow">404</p>
       <h1 className="section-title">Page not found</h1>
       <p>The page you're looking for doesn't exist or has been moved.</p>
-      <Link to="/" className="btn btn-primary">
+      <LocalLink to="/" className="btn btn-primary">
         Back to Home
-      </Link>
+      </LocalLink>
     </section>
   )
 }
