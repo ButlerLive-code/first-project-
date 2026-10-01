@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { PageHeader } from '../components/PageHeader'
 import { SuccessCard } from '../components/SuccessCard'
 import { plans } from '../data/plans'
+import { useT } from '../i18n/useT'
 
 const COMMISSION = 0.3
 
@@ -14,6 +15,7 @@ const steps = [
 const paidPlans = plans.filter((p) => p.price > 0)
 
 export function Affiliate() {
+  const t = useT()
   const [referrals, setReferrals] = useState(25)
   const [planId, setPlanId] = useState(paidPlans[0].id)
   const [applied, setApplied] = useState(false)
@@ -66,7 +68,7 @@ export function Affiliate() {
                     checked={planId === p.id}
                     onChange={() => setPlanId(p.id)}
                   />
-                  {p.name}
+                  {t.plans[p.id].name}
                 </label>
               ))}
             </div>

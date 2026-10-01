@@ -1,17 +1,22 @@
 import { useState } from 'react'
 import { useLocalNavigate } from '../i18n/useLocalNavigate'
 import { plans } from '../data/plans'
+import { useT } from '../i18n/useT'
+import { useLocale } from '../i18n/useLocale'
+import { formatPrice } from '../i18n/format'
 
 export function Pricing() {
   const [selected, setSelected] = useState(plans.length - 1)
   const navigate = useLocalNavigate()
+  const t = useT()
+  const locale = useLocale()
 
   return (
     <section className="pricing container" id="pricing">
       <div className="section-head">
-        <h2 className="section-title">Choose Your Plan</h2>
+        <h2 className="section-title">{t.pricing.title}</h2>
         <p>
-          Let's choose the package that is best for you and explore it happily and cheerfully.
+          {t.pricing.text}
         </p>
       </div>
 
@@ -23,18 +28,18 @@ export function Pricing() {
             onMouseEnter={() => setSelected(i)}
           >
             <img src={plan.image} alt="" width={145} height={165} />
-            <h3 className="plan-name">{plan.name}</h3>
+            <h3 className="plan-name">{t.plans[plan.id].name}</h3>
             <ul className="plan-perks">
-              {plan.perks.map((perk) => (
+              {t.plans[plan.id].perks.map((perk) => (
                 <li key={perk}>{perk}</li>
               ))}
             </ul>
             <p className="plan-price">
               {plan.price === 0 ? (
-                'Free'
+                t.pricing.free
               ) : (
                 <>
-                  ${plan.price} <span>/ mo</span>
+                  {formatPrice(plan.price, locale)} <span>{t.pricing.perMonth}</span>
                 </>
               )}
             </p>
@@ -43,7 +48,7 @@ export function Pricing() {
               className="btn plan-select"
               onClick={() => navigate(`/checkout?plan=${plan.id}`)}
             >
-              Select
+              {t.pricing.select}
             </button>
           </li>
         ))}

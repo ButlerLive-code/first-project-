@@ -1,41 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { LocalLink } from '../i18n/LocalLink'
+import { useT } from '../i18n/useT'
 import logo from '../assets/logo.svg'
 import facebook from '../assets/facebook.svg'
 import twitter from '../assets/twitter.svg'
 import instagram from '../assets/instagram.svg'
-
-const columns = [
-  {
-    title: 'Product',
-    links: [
-      { label: 'Download', to: '/download' },
-      { label: 'Pricing', to: '/#pricing' },
-      { label: 'Locations', to: '/locations' },
-      { label: 'Server', to: '/servers' },
-      { label: 'Countries', to: '/countries' },
-      { label: 'Blog', to: '/blog' },
-    ],
-  },
-  {
-    title: 'Engage',
-    links: [
-      { label: 'LaslesVPN ?', to: '/what-is-vpn' },
-      { label: 'FAQ', to: '/faq' },
-      { label: 'Tutorials', to: '/tutorials' },
-      { label: 'About Us', to: '/about' },
-      { label: 'Privacy Policy', to: '/privacy' },
-      { label: 'Terms of Service', to: '/terms' },
-    ],
-  },
-  {
-    title: 'Earn Money',
-    links: [
-      { label: 'Affiliate', to: '/affiliate' },
-      { label: 'Become Partner', to: '/partners' },
-    ],
-  },
-]
 
 const socials = [
   { name: 'Facebook', icon: facebook, href: 'https://www.facebook.com/' },
@@ -45,6 +14,39 @@ const socials = [
 
 export function Footer() {
   const [subscribed, setSubscribed] = useState<string | null>(null)
+  const t = useT()
+  const columns = [
+    {
+      title: t.footer.product,
+      links: [
+        { label: t.footer.download, to: '/download' },
+        { label: t.footer.pricing, to: '/#pricing' },
+        { label: t.footer.locations, to: '/locations' },
+        { label: t.footer.server, to: '/servers' },
+        { label: t.footer.countries, to: '/countries' },
+        { label: t.footer.blog, to: '/blog' },
+      ],
+    },
+    {
+      title: t.footer.engage,
+      links: [
+        { label: 'LaslesVPN ?', to: '/what-is-vpn' }, // i18n-ignore
+        { label: t.footer.faq, to: '/faq' },
+        { label: t.footer.tutorials, to: '/tutorials' },
+        { label: t.footer.aboutUs, to: '/about' },
+        { label: t.footer.privacy, to: '/privacy' },
+        { label: t.footer.terms, to: '/terms' },
+      ],
+    },
+    {
+      title: t.footer.earnMoney,
+      links: [
+        { label: t.footer.affiliate, to: '/affiliate' },
+        { label: t.footer.becomePartner, to: '/partners' },
+      ],
+    },
+  ]
+
 
   function handleSubscribe(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -56,20 +58,22 @@ export function Footer() {
       <div className="container">
         <div className="subscribe">
           <div>
-            <h2 className="subscribe-title">Subscribe Now for Get Special Features!</h2>
+            <h2 className="subscribe-title">{t.footer.subscribeTitle}</h2>
             <p>
               {subscribed ? (
                 <>
-                  Thanks! Special offers will go to <b>{subscribed}</b> (demo — nothing was sent).
+                  {t.footer.subscribedBefore}
+                  <b>{subscribed}</b>
+                  {t.footer.subscribedAfter}
                 </>
               ) : (
-                "Let's subscribe with us and find the fun."
+                t.footer.subscribePrompt
               )}
             </p>
           </div>
           {subscribed ? (
             <button type="button" className="btn btn-outline" onClick={() => setSubscribed(null)}>
-              Use another email
+              {t.footer.useAnotherEmail}
             </button>
           ) : (
             <form className="subscribe-form" onSubmit={handleSubscribe}>
@@ -77,12 +81,12 @@ export function Footer() {
                 name="email"
                 type="email"
                 required
-                placeholder="Your email"
-                aria-label="Email address"
+                placeholder={t.footer.emailPlaceholder}
+                aria-label={t.footer.emailLabel}
                 autoComplete="email"
               />
               <button type="submit" className="btn btn-primary">
-                Subscribe Now
+                {t.footer.subscribeButton}
               </button>
             </form>
           )}
@@ -91,11 +95,15 @@ export function Footer() {
         <div className="footer-main">
           <div className="footer-about">
             <LocalLink to="/">
-              <img src={logo} alt="LaslesVPN" width={149} height={36} />
+              <img
+                src={logo}
+                alt="LaslesVPN" // i18n-ignore
+                width={149}
+                height={36}
+              />
             </LocalLink>
             <p>
-              <b>LaslesVPN</b> is a private virtual network that has unique features and has high
-              security.
+              <b>LaslesVPN</b>{/* i18n-ignore */} {t.footer.about}
             </p>
             <ul className="footer-socials">
               {socials.map((s) => (
@@ -107,7 +115,7 @@ export function Footer() {
               ))}
             </ul>
             <p className="footer-copy">
-              ©2020<span>LaslesVPN</span>
+              ©2020<span>LaslesVPN</span>{/* i18n-ignore */}
             </p>
           </div>
 

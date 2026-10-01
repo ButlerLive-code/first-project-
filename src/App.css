@@ -526,8 +526,35 @@
 
 /* ---------- Responsive ---------- */
 @media (max-width: 1100px) {
+  /* Tighter header: Russian labels are longer, and the desktop bar has to
+     fit between 901px and 1100px without wrapping. */
   .header-menu {
-    margin-left: 60px;
+    margin-left: 24px;
+  }
+
+  .header-logo {
+    flex-shrink: 0;
+  }
+
+  .header-nav {
+    gap: 20px;
+    font-size: 15px;
+  }
+
+  .header-nav a,
+  .header-signin,
+  .header-signup {
+    white-space: nowrap;
+  }
+
+  .header-auth {
+    gap: 16px;
+  }
+
+  .header-signup {
+    width: auto;
+    min-width: 120px;
+    padding-inline: 20px;
   }
 
   .hero,
@@ -597,8 +624,17 @@
     gap: 12px;
   }
 
+  /* Switch, Sign In and Sign Up share one row; wrap rather than overflow on
+     very narrow screens. */
   .header-auth {
+    flex-wrap: wrap;
+    gap: 12px;
     justify-content: space-between;
+  }
+
+  .header-signup {
+    flex: none;
+    padding-inline: 16px;
   }
 
   .hero,

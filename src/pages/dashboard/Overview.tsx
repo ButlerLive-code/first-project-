@@ -4,6 +4,7 @@ import { LocalLink } from '../../i18n/LocalLink'
 import { formatDate, getDevices, renewalDate } from '../../auth/account'
 import { useAuth } from '../../auth/useAuth'
 import { getPlatform } from '../../data/platforms'
+import { useT } from '../../i18n/useT'
 import { getPlan } from '../../data/plans'
 import { servers } from '../../data/servers'
 
@@ -30,6 +31,7 @@ function fakeIp(serverId: string) {
 
 export function Overview() {
   const { user } = useAuth()
+  const t = useT()
   const [params, setParams] = useSearchParams()
   const plan = getPlan(user?.plan)
   const [serverId, setServerId] = useState(
@@ -73,7 +75,7 @@ export function Overview() {
       {welcome && plan && (
         <div className="toast" role="status">
           <span>
-            🎉 You're all set! <b>{plan.name}</b> is now active.
+            🎉 You're all set! <b>{t.plans[plan.id].name}</b> is now active.
           </span>
           <button type="button" aria-label="Dismiss" onClick={() => setParams({}, { replace: true })}>
             ×
@@ -144,7 +146,7 @@ export function Overview() {
               <div className="summary-plan">
                 <img src={plan.image} alt="" width={72} height={82} />
                 <div>
-                  <p className="summary-plan-name">{plan.name}</p>
+                  <p className="summary-plan-name">{t.plans[plan.id].name}</p>
                   <p>{plan.price === 0 ? 'Free forever' : `$${plan.price} / month`}</p>
                 </div>
               </div>

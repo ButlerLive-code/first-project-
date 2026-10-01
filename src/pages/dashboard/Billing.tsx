@@ -3,11 +3,11 @@ import { LocalLink } from '../../i18n/LocalLink'
 import { billingLabel, formatDate, renewalDate } from '../../auth/account'
 import type { Payment, User } from '../../auth/context'
 import { useAuth } from '../../auth/useAuth'
+import { useT } from '../../i18n/useT'
 import { getPlan } from '../../data/plans'
 import { cardBrand, formatCardNumber, formatExpiry, isExpiryValid } from '../../utils/card'
 
-function downloadInvoice(payment: Payment, user: User) {
-  const plan = getPlan(payment.plan)
+function downloadInvoice(payment: Payment, user: User, planName: string) {
   const lines = [
     'LaslesVPN — Invoice',
     '',
@@ -15,7 +15,7 @@ function downloadInvoice(payment: Payment, user: User) {
     `Date:      ${formatDate(payment.date)}`,
     `Billed to: ${user.name} <${user.email}>`,
     '',
-    `${plan?.name} (${billingLabel(payment.billing)})`,
+    `${planName} (${billingLabel(payment.billing)})`,
     `Paid:      $${payment.amount.toFixed(2)}`,
     `Card:      ${user.card ? `${user.card.brand} •••• ${user.card.last4}` : '—'}`,
     '',
@@ -30,6 +30,7 @@ function downloadInvoice(payment: Payment, user: User) {
 }
 
 export function Billing() {
+  const t = useT()
   const { user, updateUser } = useAuth()
   const [editingCard, setEditingCard] = useState(false)
   const [card, setCard] = useState({ number: '', expiry: '' })
@@ -64,7 +65,7 @@ export function Billing() {
   function cancelPlan() {
     updateUser({ plan: 'free', billing: undefined })
     setConfirmCancel(false)
-    setMessage(`${plan?.name} cancelled. You're now on the Free Plan.`)
+    setMessage(`${plan ? t.plans[plan.id].name : ''} cancelled. You're now on the Free Plan.`)
   }
 
   return (
@@ -86,7 +87,7 @@ export function Billing() {
               <div className="summary-plan">
                 <img src={plan.image} alt="" width={56} height={64} />
                 <div>
-                  <p className="summary-plan-name">{plan.name}</p>
+                  <p className="summary-plan-name">{t.plans[plan.id].name}</p>
                   <p>
                     {paid
                       ? `$${plan.price} / month · billed ${billingLabel(user.billing ?? 'monthly').toLowerCase()}`
@@ -112,7 +113,7 @@ export function Billing() {
               {paid &&
                 (confirmCancel ? (
                   <div className="confirm">
-                    <p>Cancel {plan.name}? You'll move to the Free Plan right away.</p>
+                    <p>Cancel {t.plans[plan.id].name}? You'll move to the Free Plan right away.</p>
                     <div className="button-row">
                       <button type="button" className="btn btn-danger btn-sm" onClick={cancelPlan}>
                         Yes, cancel
@@ -220,7 +221,7 @@ export function Billing() {
                     <td>{formatDate(payment.date)}</td>
                     <td>{payment.id}</td>
                     <td>
-                      {getPlan(payment.plan)?.name} · {billingLabel(payment.billing)}
+                      {t.plans[payment.plan].name} · {billingLabel(payment.billing)}
                     </td>
                     <td>
                       <b>${payment.amount.toFixed(2)}</b>
@@ -229,7 +230,7 @@ export function Billing() {
                       <span className="badge badge-green">Paid</span>
                     </td>
                     <td>
-                      <button type="button" className="link-button" onClick={() => downloadInvoice(payment, user)}>
+                      <button type="button" className="link-button" onClick={() => downloadInvoice(payment, user, t.plans[payment.plan].name)}>
                         Download
                       </button>
                     </td>

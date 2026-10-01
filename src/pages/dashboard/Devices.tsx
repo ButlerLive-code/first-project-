@@ -4,10 +4,12 @@ import { formatDate, getDevices, newId } from '../../auth/account'
 import type { Device } from '../../auth/context'
 import { useAuth } from '../../auth/useAuth'
 import { getPlatform, platforms } from '../../data/platforms'
+import { useT } from '../../i18n/useT'
 import { getPlan } from '../../data/plans'
 
 export function Devices() {
   const { user, updateUser } = useAuth()
+  const t = useT()
   const [added, setAdded] = useState<Device | null>(null)
 
   if (!user) return null
@@ -45,7 +47,7 @@ export function Devices() {
         <div>
           <h2 className="card-title">Your devices</h2>
           <p>
-            {devices.length} of {limit} in use on {plan ? `the ${plan.name}` : 'a free account'}.
+            {devices.length} of {limit} in use on {plan ? `the ${t.plans[plan.id].name}` : 'a free account'}.
           </p>
         </div>
         <div className="usage" role="img" aria-label={`${devices.length} of ${limit} devices used`}>

@@ -4,6 +4,7 @@ import { useLocalNavigate } from '../i18n/useLocalNavigate'
 import { newId } from '../auth/account'
 import type { Billing } from '../auth/context'
 import { useAuth } from '../auth/useAuth'
+import { useT } from '../i18n/useT'
 import { getPlan, plans, type PlanId } from '../data/plans'
 import { cardBrand, formatCardNumber, formatExpiry, isExpiryValid } from '../utils/card'
 
@@ -12,6 +13,7 @@ const YEARLY_MONTHS = 10
 
 export function Checkout() {
   const { user, updateUser } = useAuth()
+  const t = useT()
   const navigate = useLocalNavigate()
   const [params, setParams] = useSearchParams()
   const plan = getPlan(params.get('plan')) ?? getPlan(user?.plan) ?? plans[1]
@@ -92,7 +94,7 @@ export function Checkout() {
                     onChange={() => selectPlan(p.id)}
                   />
                   <img src={p.image} alt="" width={56} height={64} />
-                  <span className="plan-option-name">{p.name}</span>
+                  <span className="plan-option-name">{t.plans[p.id].name}</span>
                   <span className="plan-option-price">
                     {p.price === 0 ? 'Free' : `$${p.price} / mo`}
                   </span>
@@ -181,12 +183,12 @@ export function Checkout() {
           <div className="summary-plan">
             <img src={plan.image} alt="" width={72} height={82} />
             <div>
-              <p className="summary-plan-name">{plan.name}</p>
+              <p className="summary-plan-name">{t.plans[plan.id].name}</p>
               <p>{isFree ? 'Free forever' : billing === 'monthly' ? 'Billed monthly' : 'Billed yearly'}</p>
             </div>
           </div>
           <ul className="plan-perks summary-perks">
-            {plan.perks.map((perk) => (
+            {t.plans[plan.id].perks.map((perk) => (
               <li key={perk}>{perk}</li>
             ))}
           </ul>

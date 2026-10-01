@@ -2,31 +2,37 @@ import { useState } from 'react'
 import { LocalLink } from '../i18n/LocalLink'
 import { useAuth } from '../auth/useAuth'
 import { LanguageSwitcher } from '../i18n/LanguageSwitcher'
+import { useT } from '../i18n/useT'
 import logo from '../assets/logo.svg'
-
-const links = [
-  { label: 'About', to: '/#about' },
-  { label: 'Features', to: '/#features' },
-  { label: 'Pricing', to: '/#pricing' },
-  { label: 'Testimonials', to: '/#testimonials' },
-  { label: 'Help', to: '/help' },
-]
 
 export function Header() {
   const [open, setOpen] = useState(false)
   const { user } = useAuth()
+  const t = useT()
+  const links = [
+    { label: t.header.about, to: '/#about' },
+    { label: t.header.features, to: '/#features' },
+    { label: t.header.pricing, to: '/#pricing' },
+    { label: t.header.testimonials, to: '/#testimonials' },
+    { label: t.header.help, to: '/help' },
+  ]
   const close = () => setOpen(false)
 
   return (
     <header className="header container">
       <LocalLink to="/" className="header-logo" onClick={close}>
-        <img src={logo} alt="LaslesVPN" width={149} height={36} />
+        <img
+          src={logo}
+          alt="LaslesVPN" // i18n-ignore
+          width={149}
+          height={36}
+        />
       </LocalLink>
 
       <button
         type="button"
         className="header-burger"
-        aria-label="Menu"
+        aria-label={t.header.menu}
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
@@ -51,15 +57,15 @@ export function Header() {
           <LanguageSwitcher onSwitch={close} />
           {user ? (
             <LocalLink to="/dashboard" className="btn header-signup" onClick={close}>
-              My Account
+              {t.header.myAccount}
             </LocalLink>
           ) : (
             <>
               <LocalLink to="/login" className="header-signin" onClick={close}>
-                Sign In
+                {t.header.signIn}
               </LocalLink>
               <LocalLink to="/signup" className="btn header-signup" onClick={close}>
-                Sign Up
+                {t.header.signUp}
               </LocalLink>
             </>
           )}
