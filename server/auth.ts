@@ -58,14 +58,17 @@ export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
     emailVerification: {
       sendOnSignUp: true,
       expiresIn: 60 * 60 * 24,
+      // Also used for a changed address: Better Auth passes the new email as user.email.
       sendVerificationEmail: async ({ user, token }) => {
-        await sendMail('verifyEmail', user, '/verify-email', { token })
+        const kind = isEmailChangeToken(token) ? 'changeEmail' : 'verifyEmail'
+        await sendMail(kind, user, '/verify-email', { token })
       },
     },
     user: {
       additionalFields: {
         locale: { type: ['en', 'ru'], required: false, defaultValue: 'en', input: true },
       },
+      changeEmail: { enabled: true },
       deleteUser: { enabled: true },
     },
     session: { expiresIn: THIRTY_DAYS },
@@ -177,3 +180,15 @@ export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
 }
 
 export type Auth = ReturnType<typeof createAuth>
+
+// Email-change tokens are JWTs whose payload carries `updateTo`.
+function isEmailChangeToken(token: string) {
+  try {
+    const payload = JSON.parse(Buffer.from(token.split('.')[1] ?? '', 'base64url').toString('utf8')) as {
+      updateTo?: unknown
+    }
+    return typeof payload.updateTo === 'string'
+  } catch {
+    return false
+  }
+}

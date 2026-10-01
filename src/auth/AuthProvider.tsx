@@ -70,6 +70,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLeavingFrom(window.location.pathname)
   }, [])
 
+  const signOutEverywhere = useCallback(async () => {
+    await authCall(() => authClient.revokeSessions())
+    setLeavingFrom(window.location.pathname)
+  }, [])
+
   const updateUser = useCallback<AuthValue['updateUser']>(
     async (patch) => {
       await apiFetch('/api/me', { method: 'PATCH', body: patch })
@@ -87,8 +92,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo<AuthValue>(
-    () => ({ user, loading: !ready, leavingFrom, signIn, completeTwoFactor, signUp, signOut, updateUser, deleteAccount, refresh }),
-    [user, ready, leavingFrom, signIn, completeTwoFactor, signUp, signOut, updateUser, deleteAccount, refresh],
+    () => ({ user, loading: !ready, leavingFrom, signIn, completeTwoFactor, signUp, signOut, signOutEverywhere, updateUser, deleteAccount, refresh }),
+    [user, ready, leavingFrom, signIn, completeTwoFactor, signUp, signOut, signOutEverywhere, updateUser, deleteAccount, refresh],
   )
 
   return <AuthContext value={value}>{children}</AuthContext>

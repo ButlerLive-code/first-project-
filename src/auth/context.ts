@@ -36,6 +36,8 @@ export interface AuthValue {
   completeTwoFactor: (code: string, kind: 'totp' | 'backup') => Promise<void>
   signUp: (input: SignUpInput) => Promise<void>
   signOut: () => Promise<void>
+  // Revokes every session, this one included; records `leavingFrom` like signOut.
+  signOutEverywhere: () => Promise<void>
   updateUser: (patch: { name?: string; locale?: UserLocale }) => Promise<void>
   deleteAccount: (password?: string) => Promise<void>
   // Re-reads the session after something changed it elsewhere (email confirmed, 2FA on).
