@@ -32,6 +32,8 @@ export interface AuthValue {
   leavingFrom: string | null
   // 'two-factor' means the password was right and /login/2fa must finish the sign-in.
   signIn: (email: string, password: string) => Promise<'ok' | 'two-factor'>
+  // The second sign-in step: a valid code (or backup code) turns the password step into a session.
+  completeTwoFactor: (code: string, kind: 'totp' | 'backup') => Promise<void>
   signUp: (input: SignUpInput) => Promise<void>
   signOut: () => Promise<void>
   updateUser: (patch: { name?: string; locale?: UserLocale }) => Promise<void>

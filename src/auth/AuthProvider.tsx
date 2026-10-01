@@ -49,6 +49,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return 'ok'
   }, [refetch])
 
+  const completeTwoFactor = useCallback<AuthValue['completeTwoFactor']>(async (code, kind) => {
+    // Same as signIn: this call creates the session, so skip Better Auth's
+    // delayed signal and refetch ourselves before the caller navigates.
+    const fetchOptions = { disableSignal: true }
+    if (kind === 'backup') await authCall(() => authClient.twoFactor.verifyBackupCode({ code, fetchOptions }))
+    else await authCall(() => authClient.twoFactor.verifyTotp({ code, fetchOptions }))
+    await refetch()
+    setLeavingFrom(null)
+  }, [refetch])
+
   const signUp = useCallback<AuthValue['signUp']>(async ({ name, email, password, locale }) => {
     await authCall(() => authClient.signUp.email({ name, email, password, locale, fetchOptions: { disableSignal: true } }))
     await refetch()
@@ -76,8 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo<AuthValue>(
-    () => ({ user, loading: !ready, leavingFrom, signIn, signUp, signOut, updateUser, deleteAccount, refresh }),
-    [user, ready, leavingFrom, signIn, signUp, signOut, updateUser, deleteAccount, refresh],
+    () => ({ user, loading: !ready, leavingFrom, signIn, completeTwoFactor, signUp, signOut, updateUser, deleteAccount, refresh }),
+    [user, ready, leavingFrom, signIn, completeTwoFactor, signUp, signOut, updateUser, deleteAccount, refresh],
   )
 
   return <AuthContext value={value}>{children}</AuthContext>

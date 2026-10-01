@@ -1,7 +1,7 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { APIError, createAuthMiddleware } from 'better-auth/api'
-import { admin } from 'better-auth/plugins'
+import { admin, twoFactor } from 'better-auth/plugins'
 import { adminAc, userAc } from 'better-auth/plugins/admin/access'
 import type { UserLocale } from '../shared/api.ts'
 import type { Config } from './config.ts'
@@ -110,6 +110,7 @@ export function createAuth({ config, db, mailer, rateLimit = true }: AuthDeps) {
       }),
     },
     plugins: [
+      twoFactor({ issuer: 'LaslesVPN' }),
       admin({
         roles: { customer: userAc, admin: adminAc, support: userAc, finance: userAc },
         defaultRole: 'customer',

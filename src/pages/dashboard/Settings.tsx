@@ -3,6 +3,7 @@ import { useT } from '../../i18n/useT'
 import { DeleteAccountCard } from './settings/DeleteAccountCard'
 import { PreferencesCard } from './settings/PreferencesCard'
 import { ProfileCard } from './settings/ProfileCard'
+import { TwoFactorCard } from './settings/TwoFactorCard'
 
 export function Settings() {
   const t = useT()
@@ -11,6 +12,7 @@ export function Settings() {
   return (
     <div className="account-section account-grid">
       <ProfileCard />
+      <TwoFactorCard />
       <PreferencesCard />
       <DeleteAccountCard />
     </div>
