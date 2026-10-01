@@ -9,7 +9,11 @@ import { BlogPost } from './pages/BlogPost'
 import { Checkout } from './pages/Checkout'
 import { Countries } from './pages/Countries'
 import { Country } from './pages/Country'
-import { Dashboard } from './pages/Dashboard'
+import { Billing } from './pages/dashboard/Billing'
+import { DashboardLayout } from './pages/dashboard/DashboardLayout'
+import { Devices } from './pages/dashboard/Devices'
+import { Overview } from './pages/dashboard/Overview'
+import { Settings } from './pages/dashboard/Settings'
 import { Download } from './pages/Download'
 import { Faq } from './pages/Faq'
 import { Help } from './pages/Help'
@@ -47,10 +51,15 @@ function App() {
           path="dashboard"
           element={
             <RequireAuth>
-              <Dashboard />
+              <DashboardLayout />
             </RequireAuth>
           }
-        />
+        >
+          <Route index element={<Overview />} />
+          <Route path="devices" element={<Devices />} />
+          <Route path="billing" element={<Billing />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
         <Route path="download" element={<Download />} />
         <Route path="locations" element={<Locations />} />
         <Route path="servers" element={<Servers />} />

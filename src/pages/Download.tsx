@@ -2,16 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { useAuth } from '../auth/useAuth'
 import { PageHeader } from '../components/PageHeader'
-import { platforms, type Platform } from '../data/platforms'
-
-function detectPlatform(): string {
-  const ua = navigator.userAgent
-  if (/iPhone|iPad|iPod/.test(ua)) return 'ios'
-  if (/Android/.test(ua)) return 'android'
-  if (/Mac/.test(ua)) return 'macos'
-  if (/Linux/.test(ua)) return 'linux'
-  return 'windows'
-}
+import { detectPlatform, platforms, type Platform } from '../data/platforms'
 
 const isStore = (p: Platform) => p.id === 'ios' || p.id === 'android'
 

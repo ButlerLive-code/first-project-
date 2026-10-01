@@ -65,16 +65,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(() => persist(null), [persist])
 
+  const forget = useCallback((email: string) => {
+    const accounts = read<Record<string, User>>(ACCOUNTS_KEY, {})
+    delete accounts[email]
+    write(ACCOUNTS_KEY, accounts)
+  }, [])
+
   const updateUser = useCallback(
     (patch: Partial<User>) => {
-      if (user) persist({ ...user, ...patch })
+      if (!user) return
+      const next = { ...user, ...patch }
+      // A changed email moves the saved account instead of leaving a copy behind.
+      if (next.email !== user.email) forget(user.email)
+      persist(next)
     },
-    [user, persist],
+    [user, persist, forget],
   )
 
+  const deleteAccount = useCallback(() => {
+    if (user) forget(user.email)
+    persist(null)
+  }, [user, persist, forget])
+
   const value = useMemo(
-    () => ({ user, signIn, signUp, signOut, updateUser }),
-    [user, signIn, signUp, signOut, updateUser],
+    () => ({ user, signIn, signUp, signOut, updateUser, deleteAccount }),
+    [user, signIn, signUp, signOut, updateUser, deleteAccount],
   )
 
   return <AuthContext value={value}>{children}</AuthContext>

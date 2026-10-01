@@ -1,10 +1,10 @@
-import { startTransition, useEffect, useState, type FormEvent } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router'
-import { useAuth } from '../auth/useAuth'
-import { getPlan } from '../data/plans'
-import { servers } from '../data/servers'
-
-const deviceLimit = { free: 1, standard: 3, premium: 6 }
+import { useEffect, useState } from 'react'
+import { Link, useSearchParams } from 'react-router'
+import { formatDate, getDevices, renewalDate } from '../../auth/account'
+import { useAuth } from '../../auth/useAuth'
+import { getPlatform } from '../../data/platforms'
+import { getPlan } from '../../data/plans'
+import { servers } from '../../data/servers'
 
 const quickLinks = [
   { to: '/download', title: 'Download apps', text: 'Get LaslesVPN for every device.' },
@@ -27,9 +27,8 @@ function fakeIp(serverId: string) {
   return `185.${(hash >> 16) & 255}.${(hash >> 8) & 255}.${hash & 255}`
 }
 
-export function Dashboard() {
-  const { user, updateUser, signOut } = useAuth()
-  const navigate = useNavigate()
+export function Overview() {
+  const { user } = useAuth()
   const [params, setParams] = useSearchParams()
   const plan = getPlan(user?.plan)
   const [serverId, setServerId] = useState(
@@ -37,7 +36,6 @@ export function Dashboard() {
   )
   const [connectedAt, setConnectedAt] = useState<number | null>(null)
   const [now, setNow] = useState(() => Date.now())
-  const [saved, setSaved] = useState(false)
 
   const server = servers.find((s) => s.id === serverId) ?? servers[0]
   const locked = server.premium && plan?.id !== 'premium'
@@ -50,6 +48,9 @@ export function Dashboard() {
   }, [connectedAt])
 
   if (!user) return null
+
+  const devices = getDevices(user)
+  const lastPayment = user.payments?.[0]
 
   function toggleConnection() {
     if (connectedAt !== null) {
@@ -66,26 +67,8 @@ export function Dashboard() {
     setConnectedAt(null)
   }
 
-  function handleProfile(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const name = String(new FormData(e.currentTarget).get('name')).trim()
-    if (name) {
-      updateUser({ name })
-      setSaved(true)
-    }
-  }
-
-  function handleSignOut() {
-    // The router navigates inside a transition; signing out in the same
-    // transition keeps RequireAuth from redirecting to /signup first.
-    startTransition(() => {
-      navigate('/')
-      signOut()
-    })
-  }
-
   return (
-    <section className="dashboard container">
+    <>
       {welcome && plan && (
         <div className="toast" role="status">
           <span>
@@ -96,16 +79,6 @@ export function Dashboard() {
           </button>
         </div>
       )}
-
-      <div className="dashboard-head">
-        <div>
-          <p className="eyebrow">My Account</p>
-          <h1 className="section-title">Hi, {user.name.split(' ')[0]}!</h1>
-        </div>
-        <button type="button" className="btn btn-outline" onClick={handleSignOut}>
-          Sign Out
-        </button>
-      </div>
 
       {!plan && (
         <div className="notice">
@@ -176,20 +149,20 @@ export function Dashboard() {
               </div>
               <ul className="stat-list">
                 <li>
-                  <span>Devices</span>
-                  <b>up to {deviceLimit[plan.id]}</b>
-                </li>
-                <li>
                   <span>Locations</span>
                   <b>{plan.id === 'premium' ? servers.length : servers.filter((s) => !s.premium).length}</b>
                 </li>
                 <li>
-                  <span>Member since</span>
-                  <b>{new Date(user.memberSince).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</b>
+                  <span>{lastPayment && plan.price > 0 ? 'Renews on' : 'Member since'}</span>
+                  <b>
+                    {lastPayment && plan.price > 0
+                      ? formatDate(renewalDate(lastPayment))
+                      : new Date(user.memberSince).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                  </b>
                 </li>
               </ul>
-              <Link to={`/checkout?plan=${plan.id}`} className="btn btn-outline">
-                Change Plan
+              <Link to="/dashboard/billing" className="btn btn-outline">
+                Manage Billing
               </Link>
             </>
           ) : (
@@ -198,20 +171,23 @@ export function Dashboard() {
         </div>
 
         <div className="card">
-          <h2 className="card-title">Profile</h2>
-          <form className="form" onSubmit={handleProfile}>
-            <label className="field">
-              <span>Full name</span>
-              <input name="name" defaultValue={user.name} required onChange={() => setSaved(false)} />
-            </label>
-            <label className="field">
-              <span>Email</span>
-              <input value={user.email} readOnly />
-            </label>
-            <button type="submit" className="btn btn-outline">
-              {saved ? 'Saved ✓' : 'Save Changes'}
-            </button>
-          </form>
+          <h2 className="card-title">Devices</h2>
+          <p>
+            <b>{devices.length}</b> of <b>{plan?.devices ?? 1}</b> devices in use
+          </p>
+          <ul className="stat-list">
+            {devices.slice(0, 3).map((device) => (
+              <li key={device.id}>
+                <span>
+                  {getPlatform(device.platform)?.icon} {device.name}
+                </span>
+                {device.current && <span className="badge badge-green">This device</span>}
+              </li>
+            ))}
+          </ul>
+          <Link to="/dashboard/devices" className="btn btn-outline">
+            Manage Devices
+          </Link>
         </div>
       </div>
 
@@ -226,6 +202,6 @@ export function Dashboard() {
           </li>
         ))}
       </ul>
-    </section>
+    </>
   )
 }

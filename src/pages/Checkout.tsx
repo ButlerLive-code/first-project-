@@ -1,48 +1,28 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
+import { newId } from '../auth/account'
+import type { Billing } from '../auth/context'
 import { useAuth } from '../auth/useAuth'
 import { getPlan, plans, type PlanId } from '../data/plans'
-
-type Billing = 'monthly' | 'yearly'
+import { cardBrand, formatCardNumber, formatExpiry, isExpiryValid } from '../utils/card'
 
 // Yearly billing: pay for 10 months, get 12.
 const YEARLY_MONTHS = 10
-
-function formatCardNumber(value: string) {
-  return value
-    .replace(/\D/g, '')
-    .slice(0, 16)
-    .replace(/(.{4})(?=.)/g, '$1 ')
-}
-
-function formatExpiry(value: string) {
-  const digits = value.replace(/\D/g, '').slice(0, 4)
-  return digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits
-}
-
-function isExpiryValid(value: string) {
-  const match = /^(\d{2})\/(\d{2})$/.exec(value)
-  if (!match) return false
-  const month = Number(match[1])
-  const year = 2000 + Number(match[2])
-  if (month < 1 || month > 12) return false
-  const now = new Date()
-  return year > now.getFullYear() || (year === now.getFullYear() && month >= now.getMonth() + 1)
-}
 
 export function Checkout() {
   const { user, updateUser } = useAuth()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const plan = getPlan(params.get('plan')) ?? getPlan(user?.plan) ?? plans[1]
-  const [billing, setBilling] = useState<Billing>('monthly')
+  const [billing, setBilling] = useState<Billing>(user?.billing ?? 'monthly')
   const [card, setCard] = useState({ name: '', number: '', expiry: '', cvc: '' })
   const [error, setError] = useState('')
   const [processing, setProcessing] = useState(false)
 
   const isFree = plan.price === 0
   const total = billing === 'yearly' ? plan.price * YEARLY_MONTHS : plan.price
-  const isCurrent = user?.plan === plan.id
+  // Switching the billing period of the current plan is a valid order.
+  const isCurrent = user?.plan === plan.id && (isFree || (user.billing ?? 'monthly') === billing)
 
   function selectPlan(id: PlanId) {
     setParams({ plan: id }, { replace: true })
@@ -73,7 +53,18 @@ export function Checkout() {
     setProcessing(true)
     // Simulated payment round-trip. Card details never leave this component.
     setTimeout(() => {
-      updateUser({ plan: plan.id })
+      if (isFree) {
+        updateUser({ plan: plan.id, billing: undefined })
+      } else {
+        // Only the brand and last four digits are kept, for the Billing tab.
+        const payment = { id: newId('INV'), date: new Date().toISOString(), plan: plan.id, billing, amount: total }
+        updateUser({
+          plan: plan.id,
+          billing,
+          payments: [payment, ...(user?.payments ?? [])],
+          card: { brand: cardBrand(card.number), last4: card.number.replace(/\s/g, '').slice(-4), expiry: card.expiry },
+        })
+      }
       navigate('/dashboard?welcome=1', { replace: true })
     }, 1200)
   }
@@ -134,7 +125,7 @@ export function Checkout() {
             <fieldset className="checkout-step">
               <legend>3. Payment details</legend>
               <p className="demo-note">
-                Demo checkout — no payment is processed and card details are not saved.
+                Demo checkout — no payment is processed. Only the card brand and last four digits are kept in this browser.
               </p>
               <div className="form">
                 <label className="field">

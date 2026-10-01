@@ -9,6 +9,7 @@ export interface Plan {
   name: string
   image: string
   price: number
+  devices: number
   perks: string[]
 }
 
@@ -18,6 +19,7 @@ export const plans: Plan[] = [
     name: 'Free Plan',
     image: planFree,
     price: 0,
+    devices: 1,
     perks: ['Unlimited Bandwitch', 'Encrypted Connection', 'No Traffic Logs', 'Works on All Devices'],
   },
   {
@@ -25,6 +27,7 @@ export const plans: Plan[] = [
     name: 'Standard Plan',
     image: planStandard,
     price: 9,
+    devices: 3,
     perks: [
       'Unlimited Bandwitch',
       'Encrypted Connection',
@@ -38,6 +41,7 @@ export const plans: Plan[] = [
     name: 'Premium Plan',
     image: planPremium,
     price: 12,
+    devices: 6,
     perks: [
       'Unlimited Bandwitch',
       'Encrypted Connection',

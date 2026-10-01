@@ -119,3 +119,12 @@ export const platforms: Platform[] = [
 export function getPlatform(id: string | undefined) {
   return platforms.find((p) => p.id === id)
 }
+
+export function detectPlatform(): string {
+  const ua = navigator.userAgent
+  if (/iPhone|iPad|iPod/.test(ua)) return 'ios'
+  if (/Android/.test(ua)) return 'android'
+  if (/Mac/.test(ua)) return 'macos'
+  if (/Linux/.test(ua)) return 'linux'
+  return 'windows'
+}
