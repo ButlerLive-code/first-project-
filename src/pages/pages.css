@@ -806,6 +806,44 @@
   margin-top: 16px;
 }
 
+/* ---------- Sign-in extras ---------- */
+.dev-mail {
+  padding-top: 48px;
+  padding-bottom: 96px;
+}
+
+.dev-mail-list {
+  display: grid;
+  gap: 16px;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dev-mail-text {
+  margin: 12px 0 0;
+  font: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.backup-codes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.auth-divider {
+  margin: 16px 0;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 1100px) {
   .dashboard-grid {

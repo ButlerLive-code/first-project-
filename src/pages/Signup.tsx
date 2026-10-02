@@ -1,33 +1,45 @@
 import { useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router'
+import { errorMessage } from '../api/errorMessage'
 import { LocalLink } from '../i18n/LocalLink'
 import { useLocalNavigate } from '../i18n/useLocalNavigate'
 import { safeNext } from '../auth/next'
+import { GoogleButton } from '../auth/ui/GoogleButton'
 import { useAuth } from '../auth/useAuth'
+import { useLocale } from '../i18n/useLocale'
 import { message, useT, type Message } from '../i18n/useT'
 import { usePageMeta } from '../i18n/usePageMeta'
 
 export function Signup() {
   const t = useT()
+  const locale = useLocale()
   usePageMeta(t.signup.metaTitle)
   const { signUp } = useAuth()
   const navigate = useLocalNavigate()
   const [params] = useSearchParams()
   const next = safeNext(params.get('next'), '/checkout')
   const [error, setError] = useState<Message>(null)
+  const [busy, setBusy] = useState(false)
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const form = new FormData(e.currentTarget)
     const name = String(form.get('name')).trim()
     const email = String(form.get('email')).trim()
     const password = String(form.get('password'))
-    if (password.length < 6) {
+    if (password.length < 8) {
       setError(message((t) => t.auth.passwordTooShort))
       return
     }
-    signUp(name, email)
-    navigate(next, { replace: true })
+    setBusy(true)
+    try {
+      // The confirmation email goes out in the language of this page.
+      await signUp({ name, email, password, locale })
+      navigate(next, { replace: true })
+    } catch (err) {
+      setError(message((t) => errorMessage(t, err)))
+      setBusy(false)
+    }
   }
 
   return (
@@ -35,6 +47,8 @@ export function Signup() {
       <div className="auth-card">
         <h1 className="auth-title">{t.signup.title}</h1>
         <p className="auth-subtitle">{t.signup.subtitle}</p>
+
+        <GoogleButton next={next} />
 
         <form className="form" onSubmit={handleSubmit}>
           <label className="field">
@@ -66,7 +80,7 @@ export function Signup() {
               <LocalLink to="/privacy">{t.signup.privacy}</LocalLink>
             </span>
           </label>
-          <button type="submit" className="btn btn-primary form-submit">
+          <button type="submit" className="btn btn-primary form-submit" disabled={busy}>
             {t.signup.submit}
           </button>
         </form>
